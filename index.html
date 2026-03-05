@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Who's That Pokémon?</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
+  <!-- canvas-confetti — free CDN, no backend needed -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -45,6 +47,17 @@
     }
     .start-btn:hover { background:#a50000; }
     .start-btn:disabled { background:#ccc; cursor:not-allowed; }
+
+    /* SOUND TOGGLE — fixed top-right corner */
+    .sound-toggle {
+      position: fixed; top: 14px; right: 14px; z-index: 999;
+      background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.45);
+      border-radius: 10px; padding: 6px 12px; cursor: pointer;
+      font-size: 18px; color: #fff; backdrop-filter: blur(4px);
+      transition: background .2s; line-height: 1;
+    }
+    .sound-toggle:hover { background: rgba(255,255,255,0.28); }
+    .sound-toggle.muted { opacity: 0.45; }
 
     /* GAME */
     #game-screen { display:none; }
@@ -117,7 +130,6 @@
       font-size:11px; font-weight:700; color:#fff; margin-right:4px; margin-top:2px;
     }
     .hint-card .entry-text { color:#444; line-height:1.5; font-size:12px; }
-
     .next-btn {
       background:#cc0000; color:#fff; border:none; border-radius:10px;
       padding:13px 28px; font-size:15px; font-weight:700; cursor:pointer; width:100%; transition:background .2s;
@@ -148,28 +160,13 @@
 
     /* PAGE FOOTER — outside the card */
     .page-footer {
-      max-width: 520px;
-      width: 100%;
-      margin-top: 20px;
-      text-align: center;
-      color: rgba(255,255,255,0.55);
-      font-size: 11px;
-      line-height: 1.9;
-      padding: 0 4px 24px;
+      max-width: 520px; width: 100%; margin-top: 20px;
+      text-align: center; color: rgba(255,255,255,0.55);
+      font-size: 11px; line-height: 1.9; padding: 0 4px 24px;
     }
     .page-footer a { color: rgba(255,255,255,0.7); text-decoration: underline; }
-    .page-footer .dedication {
-      color: rgba(255,255,255,0.85);
-      font-style: italic;
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
-    .page-footer .disclaimer {
-      font-size: 10px;
-      color: rgba(255,255,255,0.4);
-      margin-top: 8px;
-      line-height: 1.7;
-    }
+    .page-footer .dedication { color: rgba(255,255,255,0.85); font-style: italic; font-size: 12px; margin-bottom: 4px; }
+    .page-footer .disclaimer { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 8px; line-height: 1.7; }
 
     .screen { animation:fadeIn .35s ease; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
@@ -177,16 +174,17 @@
 </head>
 <body>
 
+<!-- Sound toggle — always visible, all screens -->
+<button class="sound-toggle" id="sound-toggle" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+
 <div class="card">
 
   <!-- ══════════ WELCOME ══════════ -->
   <div id="welcome-screen" class="screen">
     <h1>Who's That<br/>Pokémon?</h1>
     <p class="subtitle">Generation 1 · Original 151</p>
-
     <label for="player-name">Your Trainer Name</label>
     <input type="text" id="player-name" placeholder="Ash Ketchum…" maxlength="20"/>
-
     <label>Quiz Mode</label>
     <div class="toggle-row">
       <button class="toggle-btn active" id="btn-quick" onclick="selectMode('quick')">
@@ -196,7 +194,6 @@
         📖 Full Pokédex<br/><small style="font-weight:400;font-size:11px">All 151</small>
       </button>
     </div>
-
     <label>Difficulty</label>
     <div class="difficulty-row">
       <button class="diff-btn" id="btn-easy" onclick="selectDiff('easy')">
@@ -206,7 +203,6 @@
         <span class="icon">🌑</span>Hard<br/><small style="font-weight:400;font-size:11px">Silhouette only</small>
       </button>
     </div>
-
     <button class="start-btn" id="start-btn" onclick="startGame()" disabled>Start Quiz!</button>
   </div>
 
@@ -231,7 +227,6 @@
     <p class="question-label">Who's that Pokémon?</p>
     <div class="options-grid" id="options-grid"></div>
     <p class="feedback-msg" id="feedback-msg"></p>
-
     <div class="hint-section">
       <div class="hint-row">
         <button class="hint-btn" id="hint-btn-1" onclick="revealHint(1)">
@@ -246,7 +241,6 @@
       </div>
       <div class="hint-cards" id="hint-cards"></div>
     </div>
-
     <button class="next-btn" id="next-btn" style="display:none" onclick="nextQuestion()">Next →</button>
   </div>
 
@@ -274,9 +268,108 @@
 </footer>
 
 <script>
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// AUDIO ENGINE  —  Web Audio API, zero external files
+// All sounds synthesised in-browser. AudioContext unlocked on first
+// user gesture (startGame) to satisfy browser autoplay policy.
+// ═══════════════════════════════════════════════════════════════════
+let audioCtx = null;
+let soundOn  = true;
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function tone(freq, type, dur, vol = 0.28, delay = 0) {
+  if (!soundOn) return;
+  try {
+    const ctx  = getCtx();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+    gain.gain.setValueAtTime(vol, ctx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + dur);
+    osc.start(ctx.currentTime + delay);
+    osc.stop(ctx.currentTime + delay + dur);
+  } catch(e) {}
+}
+
+// ✅ Correct — bright ascending C→E→G arpeggio
+function playCorrect() {
+  tone(523.25, 'square', 0.12, 0.28, 0.00);
+  tone(659.25, 'square', 0.12, 0.28, 0.11);
+  tone(783.99, 'square', 0.18, 0.28, 0.22);
+}
+
+// ❌ Wrong — descending dull thud
+function playWrong() {
+  tone(300, 'sawtooth', 0.10, 0.22, 0.00);
+  tone(220, 'sawtooth', 0.16, 0.22, 0.12);
+}
+
+// 🎉 Fanfare — 4-note victory melody (results ≥ 80%)
+function playFanfare() {
+  [523, 659, 784, 1047].forEach((f, i) => tone(f, 'square', 0.2, 0.3, i * 0.13));
+}
+
+// 💡 Hint blip — soft sine ping
+function playHint() {
+  tone(880, 'sine', 0.09, 0.15, 0);
+}
+
+// 🔘 UI click — subtle high tick
+function playClick() {
+  tone(1000, 'sine', 0.04, 0.1, 0);
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  const btn = document.getElementById('sound-toggle');
+  btn.textContent = soundOn ? '🔊' : '🔇';
+  btn.classList.toggle('muted', !soundOn);
+  if (soundOn) getCtx(); // re-unlock if needed
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CONFETTI  —  canvas-confetti (CDN, no backend)
+// ═══════════════════════════════════════════════════════════════════
+
+// Small burst on each correct answer
+function burstConfetti() {
+  confetti({
+    particleCount: 65,
+    spread: 70,
+    origin: { y: 0.58 },
+    colors: ['#ff4444','#ffcc00','#44aa44','#4488ff','#ff88cc','#ffffff']
+  });
+}
+
+// Scaled celebration on results screen
+function celebrationConfetti(pct) {
+  if (pct < 60) return;
+  const rounds  = pct === 100 ? 6 : pct >= 80 ? 3 : 1;
+  const count   = pct === 100 ? 130 : 75;
+  let fired = 0;
+  const iv = setInterval(() => {
+    confetti({
+      particleCount: count,
+      angle: fired % 2 === 0 ? 60 : 120,
+      spread: 80,
+      origin: { x: fired % 2 === 0 ? 0.1 : 0.9, y: 0.6 },
+      colors: ['#cc0000','#ffcc00','#ffffff','#ff6666','#ffee88']
+    });
+    fired++;
+    if (fired >= rounds * 2) clearInterval(iv);
+  }, 340);
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // SPRITE MAP
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 const SPRITE_MAP = {
   bulbasaur:'Bulbasaur',ivysaur:'Ivysaur',venusaur:'Venusaur',
   charmander:'Charmander',charmeleon:'Charmeleon',charizard:'Charizard',
@@ -354,9 +447,9 @@ const FALLBACK_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/
 function gifUrl(name)    { return GIF_BASE      + (SPRITE_MAP[name] || capitalize(name)) + '.gif'; }
 function fallbackUrl(id) { return FALLBACK_BASE + id + '.png'; }
 
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 // STATE
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 let difficulty         = null;
 let quizMode           = 'quick';
 let playerName         = '';
@@ -369,16 +462,18 @@ let hintsRevealed      = 0;
 let currentPokemonData = null;
 const QUICK_COUNT      = 20;
 
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 // WELCOME
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 document.getElementById('player-name').addEventListener('input', checkReady);
 function selectMode(m) {
+  playClick();
   quizMode = m;
   document.getElementById('btn-quick').classList.toggle('active', m==='quick');
   document.getElementById('btn-full').classList.toggle('active',  m==='full');
 }
 function selectDiff(d) {
+  playClick();
   difficulty = d;
   document.getElementById('btn-easy').classList.toggle('selected', d==='easy');
   document.getElementById('btn-hard').classList.toggle('selected', d==='hard');
@@ -389,18 +484,18 @@ function checkReady() {
   document.getElementById('start-btn').disabled = !(name && difficulty);
 }
 
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 // LOAD POKÉMON LIST
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 async function loadPokemonList() {
   const res  = await fetch('https://pokeapi.co/api/v2/pokemon?limit=151');
   const data = await res.json();
   allPokemon = data.results.map((p, i) => ({ id: i + 1, name: p.name }));
 }
 
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 // EVOLUTION CHAIN HELPERS
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 async function getGen1EvoSiblings(pokemonId) {
   try {
     const specRes  = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`);
@@ -414,9 +509,9 @@ async function getGen1EvoSiblings(pokemonId) {
   } catch(e) { return []; }
 }
 
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 // BUILD OPTIONS
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 async function buildOptions(correct) {
   let evoDecoy = null;
   if (difficulty === 'hard') {
@@ -435,10 +530,12 @@ async function buildOptions(correct) {
   return options.sort(() => Math.random() - 0.5);
 }
 
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 // START GAME
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 async function startGame() {
+  getCtx(); // unlock AudioContext on user gesture
+  playClick();
   playerName = document.getElementById('player-name').value.trim();
   document.getElementById('start-btn').disabled = true;
   document.getElementById('start-btn').textContent = 'Loading…';
@@ -454,9 +551,9 @@ async function startGame() {
   renderQuestion();
 }
 
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 // RENDER QUESTION
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 async function renderQuestion() {
   const q       = questions[currentQ];
   const img     = document.getElementById('pokemon-img');
@@ -494,9 +591,9 @@ async function renderQuestion() {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 // CHECK ANSWER
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 function checkAnswer(chosen, correct, btn) {
   document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
   [1,2,3].forEach(i => document.getElementById(`hint-btn-${i}`).disabled = true);
@@ -508,6 +605,8 @@ function checkAnswer(chosen, correct, btn) {
     btn.classList.add('correct');
     fb.textContent = `✅ Correct! It's ${displayName(correct)}!`;
     fb.style.color = '#28a745';
+    playCorrect();
+    burstConfetti();
   } else {
     btn.classList.add('wrong');
     document.querySelectorAll('.opt-btn').forEach(b => {
@@ -515,6 +614,7 @@ function checkAnswer(chosen, correct, btn) {
     });
     fb.textContent = `❌ It was ${displayName(correct)}!`;
     fb.style.color = '#dc3545';
+    playWrong();
   }
   updateAccuracy();
   const nxt = document.getElementById('next-btn');
@@ -522,11 +622,12 @@ function checkAnswer(chosen, correct, btn) {
   nxt.textContent   = currentQ < questions.length-1 ? 'Next →' : 'See Results 🏆';
 }
 
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 // HINTS
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 async function revealHint(level) {
   if (hintsRevealed >= level) return;
+  playHint();
   if (!currentPokemonData) {
     const q   = questions[currentQ];
     const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${q.correct.id}`);
@@ -538,7 +639,6 @@ async function revealHint(level) {
     b.classList.add('used'); b.disabled = true;
   }
   if (level < 3) document.getElementById(`hint-btn-${level+1}`).disabled = false;
-
   const q    = questions[currentQ];
   const card = document.createElement('div');
   card.className = 'hint-card';
@@ -560,14 +660,15 @@ async function revealHint(level) {
   document.getElementById('hint-cards').appendChild(card);
 }
 
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 // ACCURACY / NAV / RESULTS / RESTART
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
 function updateAccuracy() {
   const el = document.getElementById('accuracy-display');
   el.textContent = answeredCount===0 ? '—' : Math.round(correctCount/answeredCount*100)+'%';
 }
 function nextQuestion() {
+  playClick();
   currentQ++;
   if (currentQ < questions.length) renderQuestion();
   else showResults();
@@ -591,8 +692,14 @@ function showResults() {
   document.getElementById('result-score-sub').textContent   = `${correctCount} / ${answeredCount} correct`;
   document.getElementById('result-msg').textContent         = msg;
   showScreen('result-screen');
+  // Small delay so card renders before confetti fires
+  setTimeout(() => {
+    celebrationConfetti(pct);
+    if (pct >= 80) playFanfare();
+  }, 300);
 }
 function restartGame() {
+  playClick();
   difficulty = null;
   document.getElementById('btn-easy').classList.remove('selected');
   document.getElementById('btn-hard').classList.remove('selected');
@@ -613,5 +720,4 @@ function displayName(name) {
 }
 </script>
 </body>
-
 </html>
