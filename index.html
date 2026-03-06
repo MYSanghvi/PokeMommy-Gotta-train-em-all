@@ -325,16 +325,17 @@
 
     <div class="hint-section">
       <div class="hint-row">
-        <button class="hint-btn" id="hint-btn-1" onclick="revealHint(1)">
-          <span class="hint-icon">🔢</span>Hint 1: Pokédex #
-        </button>
-        <button class="hint-btn" id="hint-btn-2" onclick="revealHint(2)" disabled>
-          <span class="hint-icon">🏷️</span>Hint 2: Type
-        </button>
-        <button class="hint-btn" id="hint-btn-3" onclick="revealHint(3)" disabled>
-          <span class="hint-icon">📖</span>Hint 3: Pokédex Entry
-        </button>
+  <button class="hint-btn" id="hint-btn-1" onclick="revealHint(1)">
+    <span class="hint-icon">🏷️</span>Hint 1: Category
+  </button>
+  <button class="hint-btn" id="hint-btn-2" onclick="revealHint(2)" disabled>
+    <span class="hint-icon">⚡</span>Hint 2: Type
+  </button>
+  <button class="hint-btn" id="hint-btn-3" onclick="revealHint(3)" disabled>
+    <span class="hint-icon">📖</span>Hint 3: Pokédex Entry
+  </button>
       </div>
+
       <div class="hint-cards" id="hint-cards"></div>
     </div>
 
@@ -756,9 +757,15 @@ function preloadNext() {
 async function revealHint(level) {
   if (hintsRevealed >= level) return;
   playHint();
+  // Species data is needed for all 3 hints now — fetch once and cache
   if (!currentPokemonData) {
-    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${questions[currentQ].correct.id}`);
-    currentPokemonData = await res.json();
+    const [pokeRes, specRes] = await Promise.all([
+      fetch(`https://pokeapi.co/api/v2/pokemon/${questions[currentQ].correct.id}`),
+      fetch(`https://pokeapi.co/api/v2/pokemon-species/${questions[currentQ].correct.id}`)
+    ]);
+    const pokeData = await pokeRes.json();
+    const specData = await specRes.json();
+    currentPokemonData = { ...pokeData, species: specData };
   }
   hintsRevealed = level;
   for (let i=1; i<=level; i++) {
@@ -766,26 +773,28 @@ async function revealHint(level) {
     b.classList.add('used'); b.disabled = true;
   }
   if (level < 3) document.getElementById(`hint-btn-${level+1}`).disabled = false;
-  const q = questions[currentQ];
   const card = document.createElement('div');
   card.className = 'hint-card';
   if (level === 1) {
-    card.innerHTML = `<strong>🔢 Pokédex Number</strong>#${String(q.correct.id).padStart(3,'0')}`;
+    // Category = the "genus" field e.g. "Flame Pokémon", "Seed Pokémon"
+    const genus = currentPokemonData.species.genera
+      .find(g => g.language.name === 'en');
+    const categoryText = genus ? genus.genus : 'Unknown';
+    card.innerHTML = `<strong>🏷️ Category</strong>${categoryText}`;
   } else if (level === 2) {
     const badges = currentPokemonData.types
-      .map(t=>`<span class="type-badge t-${t.type.name}">${capitalize(t.type.name)}</span>`).join('');
-    card.innerHTML = `<strong>🏷️ Type</strong>${badges}`;
+      .map(t => `<span class="type-badge t-${t.type.name}">${capitalize(t.type.name)}</span>`).join('');
+    card.innerHTML = `<strong>⚡ Type</strong>${badges}`;
   } else {
-    const specRes  = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${q.correct.id}`);
-    const specData = await specRes.json();
-    const entry    = specData.flavor_text_entries
-      .find(e => e.language.name==='en' && (e.version.name==='red'||e.version.name==='blue'))
-      || specData.flavor_text_entries.find(e => e.language.name==='en');
-    const text = entry ? entry.flavor_text.replace(/[\f\n\r]/g,' ') : 'No Pokédex entry found.';
+    const entry = currentPokemonData.species.flavor_text_entries
+      .find(e => e.language.name === 'en' && (e.version.name === 'red' || e.version.name === 'blue'))
+      || currentPokemonData.species.flavor_text_entries.find(e => e.language.name === 'en');
+    const text = entry ? entry.flavor_text.replace(/[\f\n\r]/g, ' ') : 'No Pokédex entry found.';
     card.innerHTML = `<strong>📖 Pokédex Entry</strong><span class="entry-text">${text}</span>`;
   }
   document.getElementById('hint-cards').appendChild(card);
 }
+
 
 // ═══════════════════════════════════════════════════════════════════
 // ACCURACY / NAV / RESULTS / RESTART
@@ -844,3 +853,4 @@ function displayName(name) {
 </script>
 </body>
 </html>
+
