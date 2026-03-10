@@ -28,6 +28,8 @@
       min-height: 100vh; display: flex; flex-direction: column;
       align-items: center; justify-content: center; padding: 16px;
     }
+    small { font-family: 'Flexo', sans-serif; }
+
     .card {
       background: #fff; border-radius: 16px; padding: 32px 28px;
       max-width: 520px; width: 100%;
@@ -129,13 +131,13 @@
     #game-screen { display: none; }
     .top-bar {
       display: flex; justify-content: space-between; align-items: center;
-      font-size: 11px; font-weight: 700; color: #555; margin-bottom: 14px; flex-wrap: wrap; gap: 6px;
+      font-size: 9px; font-weight: 700; color: #555; margin-bottom: 14px; flex-wrap: wrap; gap: 6px;
       font-family: 'PressStart2P', cursive;
     }
-    .top-bar .trainer { color: #cc0000; font-size: 11px; }
+    .top-bar .trainer { color: #cc0000; font-size: 9px; }
     .reset-btn {
       background: transparent; border: 2px solid #ddd; border-radius: 8px;
-      padding: 5px 11px; font-size: 10px; font-weight: 700; color: #888; cursor: pointer; transition: all .2s;
+      padding: 5px 11px; font-size: 9px; font-weight: 700; color: #888; cursor: pointer; transition: all .2s;
       font-family: 'PressStart2P', cursive;
     }
     .reset-btn:hover { border-color: #cc0000; color: #cc0000; background: #fff0f0; }
@@ -246,7 +248,7 @@
     .evo-opt-btn.none-tile { justify-content: center; }
     .evo-opt-btn.none-tile .none-icon  { font-size: 28px; margin-bottom: 4px; }
     .evo-opt-btn.none-tile .none-label {
-      font-family: 'PressStart2P', cursive; font-size: 9px; color: #888; line-height: 1.6; text-align: center;
+      font-family: 'Flexo', sans-serif; font-size: 11px; color: #888; line-height: 1.6; text-align: center;
     }
     .evo-opt-btn.none-tile.correct .none-label { color: #155724; }
     .evo-opt-btn.none-tile.wrong   .none-label { color: #721c24; }
@@ -376,7 +378,7 @@
       text-align: left; margin-bottom: 18px; font-family: 'Flexo', sans-serif;
     }
     .learn-evo-section { margin-bottom: 8px; }
-    .learn-section-label { font-family: 'PressStart2P', cursive; font-size: 9px; color: #aaa; margin-bottom: 12px; text-align: left; }
+    .learn-section-label { font-family: 'PressStart2P', cursive; font-size: 9px; color: #aaa; margin-bottom: 12px; text-align: center; }
     .learn-evo-line { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; }
     .learn-evo-member {
       display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -495,7 +497,7 @@
   <div id="game-screen" class="screen">
     <div class="top-bar">
       <span class="trainer">🎮 <span id="player-display"></span></span>
-      <span>Q <span id="q-num">1</span> / <span id="q-total">20</span></span>
+      <span style="font-size:9px;">Question <span id="q-num">1</span> / <span id="q-total">20</span></span>
       <button class="reset-btn" onclick="confirmReset()">↩ Reset</button>
     </div>
     <div class="progress-wrap">
@@ -537,13 +539,13 @@
     <div class="hint-section">
       <div class="hint-row">
         <button class="hint-btn" id="hint-btn-1" onclick="revealHint(1)">
-          <span class="hint-icon">🏷️</span>Category
+          <span class="hint-icon">🏷️</span>Hint 1
         </button>
         <button class="hint-btn" id="hint-btn-2" onclick="revealHint(2)" disabled>
-          <span class="hint-icon">⚡</span>Type
+          <span class="hint-icon">⚡</span>Hint 2
         </button>
         <button class="hint-btn" id="hint-btn-3" onclick="revealHint(3)" disabled>
-          <span class="hint-icon">📖</span>Pokédex
+          <span class="hint-icon">📖</span>Hint 3
         </button>
       </div>
       <div class="hint-cards" id="hint-cards"></div>
@@ -619,7 +621,7 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════════════
-// AUDIO — Quiz SFX
+// AUDIO — SFX
 // ═══════════════════════════════════════════════════════════════════
 let audioCtx = null, soundOn = true;
 function getCtx() {
@@ -642,14 +644,18 @@ function playCorrect() { tone(523.25,'square',0.12,0.28,0); tone(659.25,'square'
 function playWrong()   { tone(300,'sawtooth',0.10,0.22,0); tone(220,'sawtooth',0.16,0.22,0.12); }
 function playFanfare() { [523,659,784,1047].forEach((f,i)=>tone(f,'square',0.2,0.3,i*0.13)); }
 function playHint()    { tone(880,'sine',0.09,0.15,0); }
-function playClick()   { tone(1000,'sine',0.04,0.1,0); }
+function playClick() {
+  if (!soundOn) return;
+  const a=new Audio('sounds/interaction.mp3');
+  a.play().catch(()=>{});
+}
 function toggleSound() {
   soundOn=!soundOn;
   const btn=document.getElementById('sound-toggle');
   btn.textContent=soundOn?'🔊':'🔇';
   btn.classList.toggle('muted',!soundOn);
   if (soundOn) getCtx();
-  else stopLearnAudio();
+  else { stopLearnAudio(); stopResultAudio(); }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -737,7 +743,12 @@ const QUICK_COUNT=20;
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════════════
 function goToWelcome(type) {
-  playClick(); quizType=type; difficulty=null; quizMode='quick';
+  playClick();
+  if (type==='whos' && soundOn) {
+    const a=new Audio('sounds/whos-that-pokemon.mp3');
+    a.play().catch(()=>{});
+  }
+  quizType=type; difficulty=null; quizMode='quick';
   document.getElementById('btn-easy').classList.remove('selected');
   document.getElementById('btn-hard').classList.remove('selected');
   document.getElementById('player-name').value='';
@@ -757,7 +768,7 @@ function goToWelcome(type) {
   document.getElementById('hard-desc').textContent     =hardD;
   showScreen('welcome-screen');
 }
-function goHome() { playClick(); stopLearnAudio(); showScreen('landing-screen'); }
+function goHome() { playClick(); stopLearnAudio(); stopResultAudio(); showScreen('landing-screen'); }
 
 // ═══════════════════════════════════════════════════════════════════
 // WELCOME CONTROLS
@@ -1058,15 +1069,41 @@ async function revealHint(level) {
   const card=document.createElement('div'); card.className='hint-card';
   if (level===1) {
     const g=currentPokemonData.species.genera.find(g=>g.language.name==='en');
-    card.innerHTML=`<strong>🏷️ Category</strong>${g?g.genus:'Unknown'}`;
+    card.innerHTML=`<strong>🏷️ Hint 1 — Category</strong>${g?g.genus:'Unknown'}`;
   } else if (level===2) {
     const b=currentPokemonData.types.map(t=>`<span class="type-badge t-${t.type.name}">${capitalize(t.type.name)}</span>`).join('');
-    card.innerHTML=`<strong>⚡ Type</strong>${b}`;
+    card.innerHTML=`<strong>⚡ Hint 2 — Type</strong>${b}`;
   } else {
     const e=currentPokemonData.species.flavor_text_entries.find(e=>e.language.name==='en'&&(e.version.name==='red'||e.version.name==='blue'))||currentPokemonData.species.flavor_text_entries.find(e=>e.language.name==='en');
-    card.innerHTML=`<strong>📖 Pokédex Entry</strong><span class="entry-text">${e?e.flavor_text.replace(/[\f\n\r]/g,' '):'No entry found.'}</span>`;
+    card.innerHTML=`<strong>📖 Hint 3 — Pokédex Entry</strong><span class="entry-text">${e?e.flavor_text.replace(/[\f\n\r]/g,' '):'No entry found.'}</span>`;
   }
   document.getElementById('hint-cards').appendChild(card);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RESULTS
+// ═══════════════════════════════════════════════════════════════════
+let resultAudio=null;
+function stopResultAudio() {
+  if (resultAudio) { resultAudio.pause(); resultAudio.currentTime=0; resultAudio=null; }
+}
+function showResults() {
+  const pct=answeredCount===0?0:Math.round(correctCount/answeredCount*100);
+  const tiers=[[100,'🏆','Perfect score! True Pokémon Master!'],[80,'🌟','Excellent! Almost a Pokémon Master!'],[60,'😄','Good job, Trainer! Keep it up!'],[40,'😅','Not bad, but keep training!'],[0,'😢','Time to revisit your Pokédex!']];
+  const [,emoji,msg]=tiers.find(([t])=>pct>=t);
+  document.getElementById('result-emoji').textContent      =emoji;
+  document.getElementById('result-player-name').textContent=playerName;
+  document.getElementById('result-pct').textContent        =pct+'%';
+  document.getElementById('result-score-sub').textContent  =`${correctCount} / ${answeredCount} correct`;
+  document.getElementById('result-msg').textContent        =msg;
+  showScreen('result-screen');
+  setTimeout(()=>{ celebrationConfetti(pct); if(pct>=80) playFanfare(); },300);
+  if (soundOn) {
+    stopResultAudio();
+    const soundFile=pct===100?'champion-sound':pct>=50?'win-sound':'lose-sound';
+    resultAudio=new Audio(`sounds/${soundFile}.mp3`);
+    resultAudio.play().catch(()=>{});
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1132,7 +1169,15 @@ async function openLearnDetail(pokemonId, fromBrowse=true) {
     .map(t=>`<span class="type-badge t-${t.type.name}" style="margin-right:4px">${capitalize(t.type.name)}</span>`).join('');
   const entry=specData.flavor_text_entries.find(e=>e.language.name==='en'&&(e.version.name==='red'||e.version.name==='blue'))||specData.flavor_text_entries.find(e=>e.language.name==='en');
   document.getElementById('learn-dex-entry').textContent=entry?entry.flavor_text.replace(/[\f\n\r]/g,' '):'No Pokédex entry available.';
-  playLearnAudio();
+  // Auto-play pronunciation only (no cry on open)
+  if (soundOn) {
+    stopLearnAudio();
+    const btn=document.getElementById('learn-speaker-btn');
+    btn.classList.add('playing');
+    learnAudio=new Audio(`sounds/eng_${String(pokemonId).padStart(3,'0')}.mp3`);
+    learnAudio.play().catch(()=>btn.classList.remove('playing'));
+    learnAudio.onended=()=>btn.classList.remove('playing');
+  }
   await buildLearnEvoLine(pokemonId,specData);
 }
 
@@ -1152,9 +1197,8 @@ function playLearnAudioUrl(url) {
   learnAudio.onended=()=>btn.classList.remove('playing');
 }
 function playLearnAudio() {
+  // Speaker button: play pronunciation then cry
   if (!learnCurrentId||!soundOn) return;
-  const p=allPokemon.find(x=>x.id===learnCurrentId);
-  if (!p) return;
   stopLearnAudio();
   const btn=document.getElementById('learn-speaker-btn');
   btn.classList.add('playing');
@@ -1188,7 +1232,8 @@ async function buildLearnEvoLine(pokemonId,specData) {
   }
 }
 function renderLearnEvoTree(container,node,currentId) {
-  container.appendChild(makeLearnEvoMember(node.pokemon,currentId));
+  const member=makeLearnEvoMember(node.pokemon,currentId);
+  if (member) container.appendChild(member);
   if (node.evolvesTo.length===0) return;
   const arrow=document.createElement('div'); arrow.className='learn-evo-arrow'; arrow.textContent='→';
   container.appendChild(arrow);
@@ -1205,9 +1250,9 @@ function renderLearnEvoTree(container,node,currentId) {
   }
 }
 function makeLearnEvoMember(p,currentId) {
+  if (!p) return null;   // skip Gen 2+ Pokémon not in our list (e.g. Pichu)
   const wrap=document.createElement('div');
-  wrap.className='learn-evo-member'+(p&&p.id===currentId?' current':'');
-  if (!p) return wrap;
+  wrap.className='learn-evo-member'+(p.id===currentId?' current':'');
   wrap.onclick=()=>{ if(p.id!==currentId) openLearnDetail(p.id,false); };
   const img=document.createElement('img');
   img.src=gifUrl(p.name); img.onerror=()=>{img.onerror=null;img.src=fallbackUrl(p.id);};
@@ -1234,20 +1279,8 @@ function updateAccuracy() {
 }
 function nextQuestion()  { playClick(); currentQ++; if(currentQ<questions.length) renderQuestion(); else showResults(); }
 function confirmReset()  { if(confirm('Reset the quiz? Your progress will be lost.')) restartGame(); }
-function showResults() {
-  const pct=answeredCount===0?0:Math.round(correctCount/answeredCount*100);
-  const tiers=[[100,'🏆','Perfect score! True Pokémon Master!'],[80,'🌟','Excellent! Almost a Pokémon Master!'],[60,'😄','Good job, Trainer! Keep it up!'],[40,'😅','Not bad, but keep training!'],[0,'😢','Time to revisit your Pokédex!']];
-  const [,emoji,msg]=tiers.find(([t])=>pct>=t);
-  document.getElementById('result-emoji').textContent      =emoji;
-  document.getElementById('result-player-name').textContent=playerName;
-  document.getElementById('result-pct').textContent        =pct+'%';
-  document.getElementById('result-score-sub').textContent  =`${correctCount} / ${answeredCount} correct`;
-  document.getElementById('result-msg').textContent        =msg;
-  showScreen('result-screen');
-  setTimeout(()=>{ celebrationConfetti(pct); if(pct>=80) playFanfare(); },300);
-}
 function restartGame() {
-  playClick(); difficulty=null;
+  playClick(); stopResultAudio(); difficulty=null;
   document.getElementById('btn-easy').classList.remove('selected');
   document.getElementById('btn-hard').classList.remove('selected');
   document.getElementById('player-name').value='';
