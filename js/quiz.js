@@ -514,37 +514,81 @@ function playLearnAudio() {
     learnAudio.onended=()=>btn.classList.remove('playing');
   };
 }
-async function buildLearnEvoLine(pokemonId,specData) {
+async function buildLearnEvoLine(pokemonId, specData) {
   const container=document.getElementById('learn-evo-line');
   container.innerHTML='<span style="font-size:12px;color:#aaa">Loading…</span>';
   try {
     const cr=await fetch(specData.evolution_chain.url);
     const cd=await cr.json();
+    // Flatten full chain into a simple list of gen1-only nodes
     function walkChain(node) {
       const p=allPokemon.find(x=>x.name===node.species.name);
-      return {pokemon:p,evolvesTo:node.evolves_to.map(walkChain)};
+      const children=node.evolves_to.flatMap(c=>walkChain(c));
+      if(p&&p.id<=151) return [{pokemon:p, evolvesTo: node.evolves_to.map(c=>{
+        const cp=allPokemon.find(x=>x.name===c.species.name);
+        return cp&&cp.id<=151?{pokemon:cp,evolvesTo:[]}:null;
+      }).filter(Boolean)}];
+      return children;
     }
+    const nodes=walkChain(cd.chain);
     container.innerHTML='';
-    renderLearnEvoTree(container,walkChain(cd.chain),pokemonId);
+    if(nodes.length===0){
+      container.innerHTML='<span style="font-size:12px;color:#aaa">No evolution data.</span>';
+      return;
+    }
+    // Build a proper linear/branching chain from scratch
+    function buildChain(node, first=true) {
+      if(!first){
+        const arrow=document.createElement('div');
+        arrow.className='learn-evo-arrow'; arrow.textContent='→';
+        container.appendChild(arrow);
+      }
+      const member=makeLearnEvoMember(node.pokemon, pokemonId);
+      if(member) container.appendChild(member);
+      if(node.evolvesTo.length===1){
+        buildChain(node.evolvesTo[0], false);
+      } else if(node.evolvesTo.length>1){
+        const arrow=document.createElement('div');
+        arrow.className='learn-evo-arrow'; arrow.textContent='→';
+        container.appendChild(arrow);
+        const branch=document.createElement('div'); branch.className='learn-evo-branch';
+        node.evolvesTo.forEach(child=>{
+          const member2=makeLearnEvoMember(child.pokemon, pokemonId);
+          if(member2) branch.appendChild(member2);
+        });
+        container.appendChild(branch);
+      }
+    }
+    buildChain(nodes[0], true);
   } catch(e) {
     container.innerHTML='<span style="font-size:12px;color:#aaa">Evolution data unavailable.</span>';
   }
 }
-function renderLearnEvoTree(container,node,currentId) {
-  const member=makeLearnEvoMember(node.pokemon,currentId);
+function renderLearnEvoTree(container, node, currentId, isFirst=true) {
+  if(!isFirst) {
+    const arrow=document.createElement('div');
+    arrow.className='learn-evo-arrow';
+    arrow.textContent='→';
+    container.appendChild(arrow);
+  }
+  const member=makeLearnEvoMember(node.pokemon, currentId);
   if(member) container.appendChild(member);
   if(node.evolvesTo.length===0) return;
-  const arrow=document.createElement('div'); arrow.className='learn-evo-arrow'; arrow.textContent='→';
-  container.appendChild(arrow);
   if(node.evolvesTo.length===1){
-    renderLearnEvoTree(container,node.evolvesTo[0],currentId);
+    renderLearnEvoTree(container, node.evolvesTo[0], currentId, false);
   } else {
-    const branch=document.createElement('div'); branch.className='learn-evo-branch';
+    const branch=document.createElement('div');
+    branch.className='learn-evo-branch';
     node.evolvesTo.forEach(child=>{
-      const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:6px;';
-      renderLearnEvoTree(row,child,currentId);
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:6px;';
+      renderLearnEvoTree(row, child, currentId, false);
       branch.appendChild(row);
     });
+    const arrow=document.createElement('div');
+    arrow.className='learn-evo-arrow';
+    arrow.textContent='→';
+    container.appendChild(arrow);
     container.appendChild(branch);
   }
 }
