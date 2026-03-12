@@ -117,26 +117,57 @@ function closeLeaderboard() {
 }
 
 // ── Fetch ─────────────────────────────────────────────────────────
+const LB_LOADING_MSGS = [
+  "Determining if you're a Pokémon Master…",
+  "Almost ready, trainer!",
+  "Sending a Pidgey to fetch the leaderboard…",
+  "Checking who's the very best… like no one ever was.",
+  "Scanning trainers across the region…",
+  "The Poké League is verifying the scores…",
+  "Snorlax is sitting on the server… asking it to move.",
+  "Team Rocket tried to steal the leaderboard… fixing it.",
+  "Fetching leaderboard from Professor Oak…",
+  "Alakazam is calculating the leaderboard…",
+  "Magikarp is trying its best…",
+  "MissingNo. corrupted the scores… fixing it.",
+  "Checking Bill's PC for the leaderboard…",
+  "Looking under the truck near the S.S. Anne…",
+  "Gary says he's already #1… again.",
+  "Checking if you used the bicycle indoors…"
+];
+
 async function fetchLeaderboard() {
   const wrap = document.getElementById('lb-table-wrap');
 
+  // ── Rotating loading messages ─────────────────────────────────
   wrap.innerHTML = '';
   const loadEl = document.createElement('p');
-  loadEl.textContent = '⏳ Loading scores…';
   loadEl.setAttribute('style',
-    'padding:40px 20px;text-align:center;font-size:15px;' +
+    'padding:40px 20px;text-align:center;font-size:14px;line-height:1.8;' +
     'color:#555;font-family:sans-serif;display:block !important;visibility:visible !important;'
   );
+
+  const shuffled = [...LB_LOADING_MSGS].sort(()=>Math.random()-0.5);
+  let msgIndex = 0;
+
+  function showNextMsg() {
+    loadEl.textContent = shuffled[msgIndex % shuffled.length];
+    msgIndex++;
+  }
+  showNextMsg();
   wrap.appendChild(loadEl);
 
+  const msgTimer = setInterval(showNextMsg, 5000);
+
   const controller = new AbortController();
-  const timeout = setTimeout(()=>controller.abort(), 8000);
+  const timeout = setTimeout(()=>controller.abort(), 40000); // 40s — enough for all messages
 
   try {
     const res = await fetch(`${APPS_SCRIPT_URL}?action=get`, {
       signal: controller.signal
     });
     clearTimeout(timeout);
+    clearInterval(msgTimer);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     let json = (await res.text()).trim();
@@ -149,17 +180,19 @@ async function fetchLeaderboard() {
 
   } catch(e) {
     clearTimeout(timeout);
+    clearInterval(msgTimer);
     wrap.innerHTML = '';
     const errEl = document.createElement('p');
     errEl.setAttribute('style',
       'padding:40px 20px;text-align:center;font-size:14px;color:#888;font-family:sans-serif;'
     );
     errEl.innerHTML = e.name==='AbortError'
-      ? '⏱ Request timed out.<br/>Check your connection.'
+      ? '⏱ Took too long to load.<br/>Check your connection and try again.'
       : `⚠️ Could not load scores.<br/><small>${e.message}</small>`;
     wrap.appendChild(errEl);
   }
 }
+
 
 // ── Render ────────────────────────────────────────────────────────
 function renderLeaderboardTable() {
