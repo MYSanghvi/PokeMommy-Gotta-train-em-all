@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pokémon Quiz — Trainer In Training</title>
+  <title>PokeMommy — Gotta Train Them All</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
@@ -15,12 +15,12 @@
 
   <!-- ══════════ LANDING ══════════ -->
   <div id="landing-screen" class="screen">
-   <img src="img/pokemommy_logo.png" alt="PokeMommy" class="landing-logo"/>
-<p class="landing-subtitle">Gotta Train Them All</p>
+    <img src="img/pokemommy_logo.png" alt="PokeMommy" class="landing-logo"/>
+    <p class="landing-subtitle">Gotta Train Them All</p>
     <div class="gen-selector">
-  <span class="gen-badge gen-active">✅ Generation 1</span>
-  <span class="gen-badge gen-inactive">⬜ Generation 2</span>
-</div><br>
+      <span class="gen-badge gen-active">✅ Generation 1</span>
+      <span class="gen-badge gen-inactive">⬜ Generation 2</span>
+    </div><br>
     <div class="quiz-type-grid">
       <button class="quiz-type-btn" onclick="openLearn()">
         <span class="qt-icon">📖</span>
@@ -183,9 +183,8 @@
   <!-- ══════════ POKÉDEX — BROWSE ══════════ -->
   <div id="learn-browse-screen" class="screen" style="display:none">
     <button class="back-link" onclick="goHome()">‹ Back</button>
-   <h1 style="font-family:'PokemonSolid',cursive;font-size:clamp(26px,6vw,42px);color:#cc0000;-webkit-text-stroke:2px #1a1a1a;paint-order:stroke fill;margin-bottom:16px;">Pokédex</h1>
-<input type="text" id="learn-search" placeholder="Search Pokémon…" oninput="filterLearnList()" style="margin-bottom:20px;"/>
-
+    <h1 style="font-family:'Flexo',sans-serif;font-size:clamp(26px,6vw,42px);color:#003A70;margin-bottom:16px;">Pokédex</h1>
+    <input type="text" id="learn-search" placeholder="Search Pokémon…" oninput="filterLearnList()" style="margin-bottom:20px;"/>
     <div id="learn-grid" class="learn-grid"></div>
   </div>
 
@@ -227,7 +226,7 @@
 
 </div><!-- /.card -->
 
-<footer class="page-footer"> 
+<footer class="page-footer">
 <!--            ...........                                                                          
               ...:*+-..........                                                    ...............  
               ...*@@@@@@@%+:........                                       .........................
@@ -289,5 +288,4 @@
 <script src="js/quiz.js"></script>
 <script src="js/leaderboard.js"></script>
 </body>
-
 </html>
