@@ -1,4 +1,4 @@
-const SPRITE_MAP = {async function buildLearnEvoLine
+const SPRITE_MAP = {
   bulbasaur:'Bulbasaur',ivysaur:'Ivysaur',venusaur:'Venusaur',
   charmander:'Charmander',charmeleon:'Charmeleon',charizard:'Charizard',
   squirtle:'Squirtle',wartortle:'Wartortle',blastoise:'Blastoise',
@@ -56,6 +56,10 @@ let allPokemon=[], questions=[], currentQ=0, correctCount=0, answeredCount=0;
 let hintsRevealed=0, currentPokemonData=null;
 let autoNextTimer=null;
 const QUICK_COUNT=20;
+
+// ── Init AudioContext on first user gesture ───────────────────────
+document.addEventListener('touchstart', ()=>getCtx(), {once:true, passive:true});
+document.addEventListener('mousedown',  ()=>getCtx(), {once:true});
 
 // ── Swipe ────────────────────────────────────────────────────────
 let touchStartX=0, touchStartY=0, swipeCount=0;
@@ -438,8 +442,9 @@ function buildLearnGrid(list) {
     const img=document.createElement('img');
     img.src=gifUrl(p.name); img.onerror=()=>{img.onerror=null;img.src=fallbackUrl(p.id);};
     const num=document.createElement('div'); num.className='lc-num'; num.textContent='#'+String(p.id).padStart(3,'0');
-    const name=document.createElement('div'); name.className='lc-name'; name.textContent=displayName(p.name);
+    const name=document.createElement('div'); name.className='lc-name';
     name.style.fontFamily="'Flexo', sans-serif";
+    name.textContent=displayName(p.name);
     card.appendChild(img); card.appendChild(num); card.appendChild(name);
     grid.appendChild(card);
   });
@@ -525,20 +530,21 @@ async function buildLearnEvoLine(pokemonId, specData) {
     const cr=await fetch(specData.evolution_chain.url);
     const cd=await cr.json();
 
-    // Build full tree, skipping non-Gen1 but recursing through them
     function walkChain(node) {
       const p=allPokemon.find(x=>x.name===node.species.name);
+      // recursively build children first
       const children=node.evolves_to.map(walkChain).filter(n=>n!==null);
       if(p&&p.id<=151){
+        // this is a valid Gen1 node — attach its Gen1 children
         return { pokemon:p, evolvesTo:children };
       }
-      // non-Gen1 node: skip it, bubble children up
+      // non-Gen1 node — skip it but bubble its children up
       return children.length>0 ? { pokemon:null, evolvesTo:children } : null;
     }
 
     function buildChain(node, first=true) {
-      // skip null-pokemon nodes but still render their children
       if(!node.pokemon){
+        // transparent node — render children at same level
         node.evolvesTo.forEach(child=>buildChain(child, first));
         return;
       }
@@ -550,15 +556,19 @@ async function buildLearnEvoLine(pokemonId, specData) {
       const member=makeLearnEvoMember(node.pokemon, pokemonId);
       if(member) container.appendChild(member);
       if(node.evolvesTo.length===1){
+        // linear chain — recurse
         buildChain(node.evolvesTo[0], false);
       } else if(node.evolvesTo.length>1){
+        // branching chain e.g. Eevee
         const arrow=document.createElement('div');
         arrow.className='learn-evo-arrow'; arrow.textContent='→';
         container.appendChild(arrow);
         const branch=document.createElement('div'); branch.className='learn-evo-branch';
         node.evolvesTo.forEach(child=>{
-          const m=makeLearnEvoMember(child.pokemon, pokemonId);
-          if(m) branch.appendChild(m);
+          if(child.pokemon){
+            const m=makeLearnEvoMember(child.pokemon, pokemonId);
+            if(m) branch.appendChild(m);
+          }
         });
         container.appendChild(branch);
       }
@@ -576,7 +586,6 @@ async function buildLearnEvoLine(pokemonId, specData) {
   }
 }
 
-
 function makeLearnEvoMember(p,currentId) {
   if(!p) return null;
   const wrap=document.createElement('div');
@@ -587,7 +596,8 @@ function makeLearnEvoMember(p,currentId) {
   const name=document.createElement('div'); name.className='evo-mem-name';
   name.style.fontFamily="'Flexo', sans-serif";
   name.textContent=displayName(p.name);
-  const num=document.createElement('div'); num.className='evo-mem-num'; num.textContent='#'+String(p.id).padStart(3,'0');
+  const num=document.createElement('div'); num.className='evo-mem-num';
+  num.textContent='#'+String(p.id).padStart(3,'0');
   wrap.appendChild(img); wrap.appendChild(name); wrap.appendChild(num);
   return wrap;
 }
@@ -630,7 +640,6 @@ function displayName(name) {
   const m={'nidoran-f':'Nidoran ♀','nidoran-m':'Nidoran ♂','mr-mime':'Mr. Mime','farfetchd':"Farfetch'd"};
   return m[name]||capitalize(name);
 }
-
 function burstConfetti() {
   confetti({ particleCount:65, spread:70, origin:{y:0.58}, colors:['#ff4444','#ffcc00','#44aa44','#4488ff','#ff88cc','#ffffff'] });
 }
