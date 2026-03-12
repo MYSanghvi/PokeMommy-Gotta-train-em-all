@@ -180,22 +180,10 @@
 
   <!-- ══════════ LEADERBOARD ══════════ -->
   <div id="leaderboard-screen" class="screen" style="display:none">
-    <button class="back-link" onclick="closeLeaderboard()">‹ Back to Results</button>
-    <h2 class="lb-title">🏆 Leaderboard</h2>
-    <div class="lb-tabs">
-      <button class="lb-tab active" onclick="switchLbTab('whos')">Who's That</button>
-      <button class="lb-tab" onclick="switchLbTab('identify')">Identify</button>
-      <button class="lb-tab" onclick="switchLbTab('evo')">Evolution</button>
-    </div>
-    <div class="lb-filters">
-      <button class="lb-filter active" onclick="switchLbFilter('all')">All</button>
-      <button class="lb-filter" onclick="switchLbFilter('easy')">🌟 Easy</button>
-      <button class="lb-filter" onclick="switchLbFilter('hard')">🌑 Hard</button>
-    </div>
-    <div id="lb-table-wrap" class="lb-table-wrap">
-      <div class="lb-loading" id="lb-loading-msg">Loading scores…</div>
-    </div>
-  </div>
+  <button class="back-link" onclick="closeLeaderboard()">‹ Back to Results</button>
+  <h2 class="lb-title" id="lb-title">🏆 Leaderboard</h2>
+  <div id="lb-table-wrap" class="lb-table-wrap"></div>
+</div>
 
   <!-- ══════════ POKÉDEX — BROWSE ══════════ -->
   <div id="learn-browse-screen" class="screen" style="display:none">
@@ -306,3 +294,4 @@
 <script src="js/leaderboard.js"></script>
 </body>
 </html>
+
