@@ -9,13 +9,30 @@
 </head>
 <body>
 
+<!-- ── Easter Egg Overlay ── -->
+<div id="easter-overlay" style="
+  display:none; position:fixed; inset:0; z-index:9999;
+  background:rgba(0,0,0,0.82); align-items:center; justify-content:center;
+  flex-direction:column; text-align:center; padding:32px;
+  font-family:'Flexo',sans-serif; color:#fff;
+">
+  <div id="easter-emoji"  style="font-size:64px; margin-bottom:16px;"></div>
+  <div id="easter-title"  style="font-size:22px; font-weight:700; margin-bottom:10px; color:#FFCB05;"></div>
+  <div id="easter-body"   style="font-size:14px; line-height:1.7; color:#eee; max-width:320px;"></div>
+  <button onclick="closeEasterEgg()" style="
+    margin-top:28px; background:#FFCB05; color:#003A70; border:none;
+    border-radius:10px; padding:12px 28px; font-size:14px; font-weight:700;
+    cursor:pointer; font-family:'Flexo',sans-serif;
+  ">Got it! ✨</button>
+</div>
+
 <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()" title="Toggle Sound">🔊</button>
 
 <div class="card">
 
   <!-- ══════════ LANDING ══════════ -->
   <div id="landing-screen" class="screen">
-    <img src="img/pokemommy_logo.png" alt="PokeMommy" class="landing-logo"/>
+    <img src="img/pokemommy_logo.png" alt="PokeMommy" class="landing-logo" id="landing-logo"/>
     <p class="landing-subtitle">Gotta Train Them All</p>
     <div class="gen-selector">
       <span class="gen-badge gen-active">✅ Generation 1</span>
@@ -176,7 +193,7 @@
       <button class="lb-filter" onclick="switchLbFilter('hard')">🌑 Hard</button>
     </div>
     <div id="lb-table-wrap" class="lb-table-wrap">
-      <div class="lb-loading">Loading scores…</div>
+      <div class="lb-loading" id="lb-loading-msg">Loading scores…</div>
     </div>
   </div>
 
