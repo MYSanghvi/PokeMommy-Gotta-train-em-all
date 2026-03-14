@@ -74,8 +74,8 @@ function showEasterEgg(emoji, title, body, img=null) {
   document.getElementById('easter-overlay').style.display = 'flex';
   vibrate([50,30,50,30,100]);
 }
-let onEasterEggClose = null;
 
+let onEasterEggClose = null;
 function closeEasterEgg() {
   document.getElementById('easter-overlay').style.display = 'none';
   if (onEasterEggClose) {
@@ -84,12 +84,10 @@ function closeEasterEgg() {
   }
 }
 
-
 // ── Toast helper (non-blocking) ───────────────────────────────────
 function showToast(message) {
   const existing = document.getElementById('easter-toast');
   if (existing) existing.remove();
-
   const toast = document.createElement('div');
   toast.id = 'easter-toast';
   toast.textContent = message;
@@ -136,7 +134,7 @@ window.addEventListener('load', ()=>{
         logoTapCount = 0;
         playSecretJingle();
         celebrationConfetti(100);
-        showEasterEgg('🏆', 'Achievment Unlocked: \n\nObsessive Tapper',
+        showEasterEgg('🏆', 'ACHIEVEMENT UNLOCKED: Obsessive Tapper',
           "This whole game was made for people who notice the small things. You're one of them. 💛");
       }
     });
@@ -150,7 +148,6 @@ window.addEventListener('load', ()=>{
   setTimeout(checkNightMode, 500);
 });
 
-
 // ── 2. Night mode ────────────────────────────────────────────────
 function checkNightMode() {
   const h = new Date().getHours();
@@ -162,15 +159,13 @@ function checkNightMode() {
       showEasterEgg('🌙', "Shouldn't you be asleep, Trainer?",
         "It's late… but a true Pokémon Trainer never rests. Night mode activated. 🌟\n\nTake care of yourself — even Ash sleeps sometimes.");
 
-      // Apply night mode visuals
-      document.body.style.background   = '#1a1a2e';
-      document.body.style.transition   = 'background 1.5s ease';
-      document.querySelector('.card').style.background  = '#16213e';
-      document.querySelector('.card').style.color       = '#e0e0e0';
-      document.querySelector('.card').style.transition  = 'background 1.5s ease, color 1.5s ease';
-      document.querySelector('.card').style.boxShadow   = '0 8px 32px rgba(0,0,0,0.6)';
+      document.body.style.background  = '#1a1a2e';
+      document.body.style.transition  = 'background 1.5s ease';
+      document.querySelector('.card').style.background = '#16213e';
+      document.querySelector('.card').style.color      = '#e0e0e0';
+      document.querySelector('.card').style.transition = 'background 1.5s ease, color 1.5s ease';
+      document.querySelector('.card').style.boxShadow  = '0 8px 32px rgba(0,0,0,0.6)';
 
-      // Star overlay on body
       const stars = document.createElement('div');
       stars.id = 'night-stars';
       stars.setAttribute('style',
@@ -189,110 +184,52 @@ function checkNightMode() {
       document.body.appendChild(stars);
       setTimeout(()=>{ stars.style.opacity='1'; }, 100);
 
+      // ── Only inject night styles when it's actually night ────
+      const style = document.createElement('style');
+      style.id = 'night-mode-styles';
+      style.textContent = `
+        body.night-mode, body.night-mode * {
+          --night-text: #e8e8e8;
+          --night-sub:  #aab4c8;
+          --night-blue: #7eb3f7;
+        }
+        #landing-screen h1, #welcome-screen h1, .qt-title,
+        .learn-detail-name, #lb-title { color: #7eb3f7 !important; -webkit-text-stroke: 0 !important; }
+        .qt-desc, .landing-subtitle, label, .learn-info-label, .learn-dex-entry,
+        .learn-category, .lc-name, .evo-mem-name, .result-msg,
+        .result-score-sub, .result-time, .feedback-msg, .top-bar,
+        .page-footer, .page-footer *, .lb-table td,
+        .lb-table th { color: #aab4c8 !important; }
+        #learn-category { color: #e8e8e8 !important; }
+        .entry-text { color: #e8e8e8 !important; }
+        .qt-title, #welcome-title, .learn-detail-num, .lc-num,
+        .evo-mem-num { color: #7eb3f7 !important; }
+        .quiz-type-btn { background: #1e2d4a !important; border-color: #2e4a7a !important; }
+        .quiz-type-btn:hover { background: #2a3f6a !important; border-color: #7eb3f7 !important; }
+        .diff-btn, .toggle-btn, .learn-nav-btn, .learn-card {
+          background: #1e2d4a !important; border-color: #2e4a7a !important; color: #aab4c8 !important;
+        }
+        .diff-btn.selected, .toggle-btn.active { background: #3D7DCA !important; color: #fff !important; }
+        input[type="text"] { background: #1e2d4a !important; border-color: #2e4a7a !important; color: #e8e8e8 !important; }
+        input[type="text"]::placeholder { color: #556a8a !important; }
+        .hint-card, .learn-info-card { background: #1e2d4a !important; border-color: #2e4a7a !important; color: #aab4c8 !important; }
+        .lb-table { background: transparent !important; }
+        .lb-table tr { background: #1e2d4a !important; }
+        .lb-table tr.lb-you { background: #2a3f6a !important; }
+        .lb-table th { background: #16213e !important; color: #7eb3f7 !important; }
+        .opt-btn, .img-opt-btn, .evo-opt-btn { background: #1e2d4a !important; border-color: #2e4a7a !important; color: #e8e8e8 !important; }
+        .opt-btn.correct, .img-opt-btn.correct, .evo-opt-btn.correct { background: #1a4a2a !important; border-color: #28a745 !important; }
+        .opt-btn.wrong, .img-opt-btn.wrong, .evo-opt-btn.wrong { background: #4a1a1a !important; border-color: #dc3545 !important; }
+        .progress-wrap { background: #2e4a7a !important; }
+        .gen-badge { background: #1e2d4a !important; border-color: #2e4a7a !important; color: #aab4c8 !important; }
+        .gen-badge.gen-active { background: #2a3f6a !important; border-color: #7eb3f7 !important; color: #7eb3f7 !important; }
+      `;
+      document.head.appendChild(style);
+      document.body.classList.add('night-mode');
+
     }, 500);
   }
 }
-
-// ── Text readability overrides ────────────────────────────────
-const style = document.createElement('style');
-style.id = 'night-mode-styles';
-style.textContent = `
-  body.night-mode, body.night-mode * {
-    --night-text: #e8e8e8;
-    --night-sub:  #aab4c8;
-    --night-blue: #7eb3f7;
-  }
-
-  /* Headings */
-  #landing-screen h1,
-  #welcome-screen h1,
-  .qt-title,
-  .learn-detail-name,
-  #lb-title { color: #7eb3f7 !important; -webkit-text-stroke: 0 !important; }
-
-  /* Body text */
-  .qt-desc, .landing-subtitle, label,
-  .learn-info-label, .learn-dex-entry,
-  .learn-category, .lc-name,
-  .evo-mem-name, .result-msg,
-  .result-score-sub, .result-time,
-  .feedback-msg, .top-bar,
-  .page-footer, .page-footer *,
-  .lb-table td, .lb-table th { color: #aab4c8 !important; }
-  #learn-category { color: #e8e8e8 !important; }
-  .entry-text { color: #e8e8e8 !important; }
-
-
-  /* Primary blue elements → lighter blue */
-  .qt-title, #welcome-title,
-  .learn-detail-num, .lc-num,
-  .evo-mem-num { color: #7eb3f7 !important; }
-
-  /* Buttons */
-  .quiz-type-btn {
-    background: #1e2d4a !important;
-    border-color: #2e4a7a !important;
-  }
-  .quiz-type-btn:hover {
-    background: #2a3f6a !important;
-    border-color: #7eb3f7 !important;
-  }
-  .diff-btn, .toggle-btn, .learn-nav-btn, .learn-card {
-    background: #1e2d4a !important;
-    border-color: #2e4a7a !important;
-    color: #aab4c8 !important;
-  }
-  .diff-btn.selected, .toggle-btn.active {
-    background: #3D7DCA !important;
-    color: #fff !important;
-  }
-
-  /* Inputs */
-  input[type="text"] {
-    background: #1e2d4a !important;
-    border-color: #2e4a7a !important;
-    color: #e8e8e8 !important;
-  }
-  input[type="text"]::placeholder { color: #556a8a !important; }
-
-  /* Cards inside game */
-  .hint-card, .learn-info-card {
-    background: #1e2d4a !important;
-    border-color: #2e4a7a !important;
-    color: #aab4c8 !important;
-  }
-
-  /* Leaderboard */
-  .lb-table { background: transparent !important; }
-  .lb-table tr { background: #1e2d4a !important; }
-  .lb-table tr.lb-you { background: #2a3f6a !important; }
-  .lb-table th { background: #16213e !important; color: #7eb3f7 !important; }
-
-  /* Option buttons */
-  .opt-btn, .img-opt-btn, .evo-opt-btn {
-    background: #1e2d4a !important;
-    border-color: #2e4a7a !important;
-    color: #e8e8e8 !important;
-  }
-  .opt-btn.correct, .img-opt-btn.correct, .evo-opt-btn.correct {
-    background: #1a4a2a !important; border-color: #28a745 !important;
-  }
-  .opt-btn.wrong, .img-opt-btn.wrong, .evo-opt-btn.wrong {
-    background: #4a1a1a !important; border-color: #dc3545 !important;
-  }
-
-  /* Progress bar track */
-  .progress-wrap { background: #2e4a7a !important; }
-
-  /* Gen badge */
-  .gen-badge { background: #1e2d4a !important; border-color: #2e4a7a !important; color: #aab4c8 !important; }
-  .gen-badge.gen-active { background: #2a3f6a !important; border-color: #7eb3f7 !important; color: #7eb3f7 !important; }
-`;
-
-
-document.head.appendChild(style);
-document.body.classList.add('night-mode');
-
 
 // ── 3. Trainer name eggs ─────────────────────────────────────────
 const TRAINER_EGGS = {
@@ -302,21 +239,21 @@ const TRAINER_EGGS = {
   'gary':          { emoji:'😏', img:'img/gary_img.png',
                      title:'Smell ya later!',
                      body:'Difficulty auto-set to Hard. You asked for it, Gary.' },
-  'misty':         { emoji:'💧',  img:'img/misty_img.png',
+  'misty':         { emoji:'💧', img:'img/misty_img.png',
                      title:'Togepiiiii!',
                      body:'The Cerulean City Gym Leader is here! Water-type Pokémon will feel extra familiar.' },
-  'brock':         { emoji:'🍳',  img:'img/brock_img.png',
+  'brock':         { emoji:'🍳', img:'img/brock_img.png',
                      title:'Leave it to me!',
                      body:'The Pewter City Gym Leader has arrived. Jelly-filled donuts for everyone!' },
-  'maulishmaster': { emoji:'👑',  img:'img/maulishmaster_img.png',
+  'maulishmaster': { emoji:'👑', img:'img/maulishmaster_img.png',
                      title:'Welcome back, Creator!',
-                     body:'Ah, the creator! Probably should be sleeping right now. Instead, built an entire Pokémon quiz. For love. Worth it! 💛' },
+                     body:'Built by a dad-to-be, for the family he loves most. One day your little trainer will play this too. 💛' },
   'thewifey':      { emoji:'💛', img:'img/thewifey_img.png',
                      title:'The Most Important Trainer!',
                      body:'Yes, the quiz was literally built for you. No pressure. 😄💛' },
   'helu':          { emoji:'🎮', img:'img/helu_img.png',
                      title:'Player 2 Has Joined!',
-                     body:"Before the quiz, before the code, there was you, a GameBoy SP, and way too many arguments about who got to play Pokémon Emerald 💚" },
+                     body:"Before the quiz, before the code — there was you, a GameBoy SP, and way too many arguments about who got to play Pokémon Emerald 💚" },
   'missingno':     null
 };
 
@@ -547,7 +484,7 @@ function buildEvoOptions(evoQ) {
 async function startGame() {
   getCtx(); stopWhosThatAudio();
   const rawName = document.getElementById('player-name').value.trim();
-  const isEgg = checkTrainerNameEgg(rawName);
+  checkTrainerNameEgg(rawName);
   if (rawName.toLowerCase().replace(/\s+/g,'') === 'missingno') return;
   playClick();
   playerName = rawName;
@@ -563,15 +500,13 @@ async function startGame() {
   document.getElementById('whos-section').style.display    =quizType==='whos'    ?'block':'none';
   document.getElementById('identify-section').style.display=quizType==='identify'?'block':'none';
   document.getElementById('evo-section').style.display     =quizType==='evo'     ?'block':'none';
-// ── Preload first 3 images before showing game ────────────────
   showScreen('game-screen');
   await preloadQuestionImages(0, 3);
   renderQuestion();
 
-  // ── Wait for easter egg overlay if one is about to appear ────
+  // ── Wait for easter egg overlay before starting timer ────────
   const isTrainerEgg = TRAINER_EGGS[rawName.toLowerCase().replace(/\s+/g,'')] != null;
   if (isTrainerEgg) {
-    // Egg shows after 300ms delay — check after 350ms to be safe
     setTimeout(()=>{
       const overlay = document.getElementById('easter-overlay');
       if (overlay.style.display === 'flex') {
@@ -585,10 +520,20 @@ async function startGame() {
   }
 }
 
+function preloadQuestionImages(startIdx, count) {
+  const toLoad = questions.slice(startIdx, startIdx + count);
+  const promises = toLoad.map(q => new Promise(resolve => {
+    const img = new Image();
+    img.onload  = resolve;
+    img.onerror = resolve;
+    img.src = gifUrl(q.correct.name);
+  }));
+  const timeout = new Promise(resolve => setTimeout(resolve, 4000));
+  return Promise.race([Promise.all(promises), timeout]);
+}
 
 async function renderQuestion() {
   clearAutoNext();
-  // ── Preload next 2 silently in background ─────────────────
   preloadQuestionImages(currentQ + 1, 5);
   const q=questions[currentQ];
   hintsRevealed=0; currentPokemonData=null;
@@ -611,20 +556,6 @@ async function renderQuestion() {
     renderEvoQuestion(q.evoQ);
   }
 }
-
-function preloadQuestionImages(startIdx, count) {
-  const toLoad = questions.slice(startIdx, startIdx + count);
-  const promises = toLoad.map(q => new Promise(resolve => {
-    const img = new Image();
-    img.onload  = resolve;
-    img.onerror = resolve; // resolve even on error so we don't hang
-    img.src = gifUrl(q.correct.name);
-  }));
-  // Timeout after 4s so a slow connection never blocks the game
-  const timeout = new Promise(resolve => setTimeout(resolve, 4000));
-  return Promise.race([Promise.all(promises), timeout]);
-}
-
 
 function renderWhosQuestion(q) {
   const img=document.getElementById('pokemon-img'), spn=document.getElementById('spinner');
@@ -967,7 +898,38 @@ function learnNavigate(dir) {
   if(next) openLearnDetail(next.id,false);
 }
 
-// ── Utility ──────────────────────────────────────────────────────
+// ── Results ───────────────────────────────────────────────────────
+function showResults() {
+  stopTimer();
+  const pct = answeredCount===0 ? 0 : Math.round(correctCount/answeredCount*100);
+  const tiers=[
+    [100,'🏆','Perfect score! True Pokémon Master!'],
+    [80, '🌟','Excellent! Almost a Pokémon Master!'],
+    [60, '😄','Good job, Trainer! Keep it up!'],
+    [40, '😅','Not bad, but keep training!'],
+    [0,  '😢','Time to revisit your Pokédex!']
+  ];
+  const [,emoji,msg]=tiers.find(([t])=>pct>=t);
+  document.getElementById('result-emoji').textContent       = emoji;
+  document.getElementById('result-player-name').textContent = playerName;
+  document.getElementById('result-pct').textContent         = pct+'%';
+  document.getElementById('result-score-sub').textContent   = `${correctCount} / ${answeredCount} correct`;
+  document.getElementById('result-time').textContent        = `⏱ ${getTimeString()}`;
+  document.getElementById('result-msg').textContent         = msg;
+  document.getElementById('lb-submit-status').textContent   = 'Saving score…';
+  showScreen('result-screen');
+  setTimeout(()=>{ celebrationConfetti(pct); if(pct>=80) playFanfare(); }, 300);
+  if (pct === 100) setTimeout(triggerMewEasterEgg, 800);
+  if(soundOn){
+    stopResultAudio();
+    const soundFile = pct===100?'champion-sound': pct>=50?'win-sound':'lose-sound';
+    resultAudio = new Audio(`sounds/${soundFile}.mp3`);
+    resultAudio.play().catch(()=>{});
+  }
+  submitScore(pct);
+}
+
+// ── Utility ───────────────────────────────────────────────────────
 function preloadNext() {
   if(quizType==='whos'&&currentQ+1<questions.length){ const p=new Image(); p.src=gifUrl(questions[currentQ+1].correct.name); }
 }
