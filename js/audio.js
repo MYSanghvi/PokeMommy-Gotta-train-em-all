@@ -15,7 +15,10 @@ function getCtx() {
 function tone(freq, type, dur, vol=0.28, delay=0) {
   if (!soundOn) return;
   try {
-    const ctx=getCtx(), osc=ctx.createOscillator(), gain=ctx.createGain();
+    const ctx = getCtx();
+    // ── Resume if suspended before scheduling any nodes ─────────
+    if (ctx.state === 'suspended') ctx.resume();
+    const osc=ctx.createOscillator(), gain=ctx.createGain();
     osc.connect(gain); gain.connect(ctx.destination);
     osc.type=type;
     osc.frequency.setValueAtTime(freq, ctx.currentTime+delay);
@@ -24,6 +27,7 @@ function tone(freq, type, dur, vol=0.28, delay=0) {
     osc.start(ctx.currentTime+delay); osc.stop(ctx.currentTime+delay+dur);
   } catch(e) {}
 }
+
 function playCorrect() {
   tone(523.25,'square',0.12,0.28,0);
   tone(659.25,'square',0.12,0.28,0.11);
@@ -45,8 +49,17 @@ function playHint() {
 }
 function playClick() {
   if (!soundOn) return;
-  clickAudio.currentTime = 0;
-  clickAudio.play().catch(()=>{});
+  // ── Resume context instantly if suspended ────────────────────
+  const ctx = getCtx();
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(()=>{
+      clickAudio.currentTime = 0;
+      clickAudio.play().catch(()=>{});
+    });
+  } else {
+    clickAudio.currentTime = 0;
+    clickAudio.play().catch(()=>{});
+  }
   vibrate(10);
 }
 
