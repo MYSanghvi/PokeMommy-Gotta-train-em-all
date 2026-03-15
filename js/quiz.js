@@ -126,7 +126,7 @@ window.addEventListener('load', ()=>{
 
       if (logoTapCount === 3) {
         playHint();
-        showToast("📱 Your nearest PokéStop is 3 taps away… wait, that's not how this works. Keep tapping.");
+        showToast("📱 Your nearest PokéStop is 3 taps away… wait, that's not how this works.");
       } else if (logoTapCount === 5) {
         playHint();
         showToast("👊 5 taps. That's rookie numbers. A real Pokémon Master wouldn't quit now.");
@@ -135,7 +135,7 @@ window.addEventListener('load', ()=>{
         playSecretJingle();
         celebrationConfetti(100);
         showEasterEgg('🏆', 'ACHIEVEMENT UNLOCKED: Obsessive Tapper',
-          "This whole game was made for people who notice the small things. You're one of them. 💛");
+          "This whole game was made for people who notice the small things. You're one of them!");
       }
     });
   }
@@ -246,8 +246,8 @@ const TRAINER_EGGS = {
                      title:'Leave it to me!',
                      body:'The Pewter City Gym Leader has arrived. Jelly-filled donuts for everyone!' },
   'maulishmaster': { emoji:'👑', img:'img/maulishmaster_img.png',
-                     title:'Welcome back, Creator!',
-                     body:'Built by a dad-to-be, for the family he loves most. One day your little trainer will play this too. 💛' },
+                     title:'Welcome back, boss!',
+                     body:'The Pokémon are safe, the leaderboard works (mostly), all the coding at 3 AM has finally paid off!' },
   'thewifey':      { emoji:'💛', img:'img/thewifey_img.png',
                      title:'The Most Important Trainer!',
                      body:'Yes, the quiz was literally built for you. No pressure. 😄💛' },
