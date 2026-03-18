@@ -60,6 +60,28 @@ let autoNextTimer=null;
 const QUICK_COUNT=20;
 
 // ════════════════════════════════════════════════════════════════
+// ── WELCOME POPUP MESSAGE
+// ════════════════════════════════════════════════════════════════
+
+function showWelcomePopup() {
+  const popup = document.getElementById('welcome-popup');
+  popup.style.display = 'flex';
+  // Prevent background scroll
+  document.body.style.overflow = 'hidden';
+}
+
+function closeWelcomePopup() {
+  const popup = document.getElementById('welcome-popup');
+  popup.style.display = 'none';
+  document.body.style.overflow = '';
+  playClick();
+}
+
+
+
+
+
+// ════════════════════════════════════════════════════════════════
 // ── EASTER EGGS
 // ════════════════════════════════════════════════════════════════
 
@@ -118,6 +140,7 @@ function showToast(message) {
 let logoTapCount=0, logoTapTimer=null;
 
 window.addEventListener('load', ()=>{
+	showWelcomePopup(); // Welcome Popup Message
   const logo = document.getElementById('landing-logo');
   if (logo) {
     logo.style.cursor = 'pointer';
