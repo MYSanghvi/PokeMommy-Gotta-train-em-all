@@ -630,9 +630,13 @@ function renderWhosQuestion(q) {
   document.getElementById('options-grid').innerHTML='';
   img.style.opacity='0'; spn.style.display='block';
   img.className=''; img.src='';
-  img.onload=()=>{ if(difficulty==='hard') img.classList.add('silhouette'); spn.style.display='none'; img.style.opacity='1'; preloadNext(); };
+
+  img.onload=()=>{ spn.style.display='none'; img.style.opacity='1'; preloadNext(); };
   img.onerror=()=>{ img.onerror=null; img.src=fallbackUrl(q.correct.id); };
+
+  if(difficulty==='hard') img.classList.add('silhouette');
   img.src=gifUrl(q.correct.name);
+
   q.options.forEach(opt=>{
     const btn=document.createElement('button');
     btn.className='opt-btn'; btn.textContent=displayName(opt.name);
@@ -641,6 +645,7 @@ function renderWhosQuestion(q) {
     document.getElementById('options-grid').appendChild(btn);
   });
 }
+
 function renderIdentifyQuestion(q) {
   const nameEl=document.getElementById('identify-name');
   nameEl.textContent=displayName(q.correct.name);
