@@ -634,7 +634,16 @@ function renderWhosQuestion(q) {
   img.onload=()=>{ spn.style.display='none'; img.style.opacity='1'; preloadNext(); };
   img.onerror=()=>{ img.onerror=null; img.src=fallbackUrl(q.correct.id); };
 
-  if(difficulty==='hard') img.classList.add('silhouette');
+  img.onload=()=>{
+    spn.style.display='none';
+    requestAnimationFrame(()=>{        // frame 1: CSS filter is computed
+      requestAnimationFrame(()=>{      // frame 2: CSS filter is painted
+        img.style.opacity='1';         // NOW show — silhouette guaranteed
+      });
+    });
+    preloadNext();
+  };
+  img.onerror=()=>{ img.onerror=null; img.src=fallbackUrl(q.correct.id); };
   img.src=gifUrl(q.correct.name);
 
   q.options.forEach(opt=>{
