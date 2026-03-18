@@ -95,3 +95,12 @@ function toggleSound() {
   if (soundOn) getCtx();
   else { stopLearnAudio(); stopResultAudio(); stopWhosThatAudio(); }
 }
+let resultAudio = null;
+function stopResultAudio() {
+  if(resultAudio){ resultAudio.onended = null; resultAudio.pause(); resultAudio = null; }
+}
+function stopLearnAudio() {
+  if(learnAudio){ learnAudio.onended = null; learnAudio.pause(); learnAudio = null; }
+  const btn = document.getElementById('learn-speaker-btn');
+  if(btn) btn.classList.remove('playing');
+}

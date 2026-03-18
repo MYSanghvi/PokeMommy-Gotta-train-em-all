@@ -1,3 +1,4 @@
+/* sprite map to convert names to all lowercase 
 const SPRITE_MAP = {
   bulbasaur:'Bulbasaur',ivysaur:'Ivysaur',venusaur:'Venusaur',
   charmander:'Charmander',charmeleon:'Charmeleon',charizard:'Charizard',
@@ -45,10 +46,11 @@ const SPRITE_MAP = {
   articuno:'Articuno',zapdos:'Zapdos',moltres:'Moltres',
   dratini:'Dratini',dragonair:'Dragonair',dragonite:'Dragonite',
   mewtwo:'Mewtwo',mew:'Mew'
-};
-const GIF_BASE      = 'https://cdn.jsdelivr.net/gh/Nackha1/Hd-sprites@master/';
+};  */
+// const GIF_BASE      = 'https://cdn.jsdelivr.net/gh/Nackha1/Hd-sprites@master/';  HD GIF source
 const FALLBACK_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/';
-function gifUrl(name)    { return GIF_BASE+(SPRITE_MAP[name]||capitalize(name))+'.gif'; }
+// function gifUrl(name)    { return GIF_BASE+(SPRITE_MAP[name]||capitalize(name))+'.gif'; } HD GIF source
+function gifUrl(name) { return 'img/sprites/' + name + '.gif'; }
 function fallbackUrl(id) { return FALLBACK_BASE+id+'.png'; }
 
 let quizType=null, difficulty=null, quizMode='quick', playerName='';
@@ -873,19 +875,26 @@ async function openLearnDetail(pokemonId,fromBrowse=true) {
     .map(t=>`<span class="type-badge t-${t.type.name}" style="margin-right:4px">${capitalize(t.type.name)}</span>`).join('');
   const entry=specData.flavor_text_entries.find(e=>e.language.name==='en'&&(e.version.name==='red'||e.version.name==='blue'))||specData.flavor_text_entries.find(e=>e.language.name==='en');
   document.getElementById('learn-dex-entry').textContent=entry?entry.flavor_text.replace(/[\f\n\r]/g,' '):'No Pokédex entry available.';
-  if(soundOn){
-    stopLearnAudio();
-    const btn=document.getElementById('learn-speaker-btn');
-    btn.classList.add('playing');
-    learnAudio=new Audio(`sounds/eng_${String(pokemonId).padStart(3,'0')}.mp3`);
-    learnAudio.play().catch(()=>btn.classList.remove('playing'));
-    learnAudio.onended=()=>btn.classList.remove('playing');
-  }
+  
+if (learnCurrentId !== pokemonId) return;  // ← If navigated away, abort
+
+if(soundOn){
+  stopLearnAudio();
+  const btn=document.getElementById('learn-speaker-btn');
+  btn.classList.add('playing');
+  learnAudio=new Audio(`sounds/eng_${String(pokemonId).padStart(3,'0')}.mp3`);
+  learnAudio.play().catch(()=>btn.classList.remove('playing'));
+  learnAudio.onended=()=>btn.classList.remove('playing');
+}
   await buildLearnEvoLine(pokemonId,specData);
 }
 function stopLearnAudio() {
-  if(learnAudio){ learnAudio.pause(); learnAudio.currentTime=0; learnAudio=null; }
-  const btn=document.getElementById('learn-speaker-btn');
+  if(learnAudio){ 
+    learnAudio.onended = null;
+    learnAudio.pause(); 
+    learnAudio = null; 
+  }
+  const btn = document.getElementById('learn-speaker-btn');
   if(btn) btn.classList.remove('playing');
 }
 function playLearnAudio() {
@@ -893,17 +902,19 @@ function playLearnAudio() {
   stopLearnAudio();
   const btn=document.getElementById('learn-speaker-btn');
   btn.classList.add('playing');
-  learnAudio=new Audio(`sounds/eng_${String(learnCurrentId).padStart(3,'0')}.mp3`);
+  const capturedId = learnCurrentId;
+  learnAudio=new Audio(`sounds/eng_${String(capturedId).padStart(3,'0')}.mp3`);
   learnAudio.play().catch(()=>{
-    learnAudio=new Audio(`https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${learnCurrentId}.ogg`);
+    learnAudio=new Audio(`https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${capturedId}.ogg`);
     learnAudio.play().catch(()=>btn.classList.remove('playing'));
     learnAudio.onended=()=>btn.classList.remove('playing');
     return;
   });
-  learnAudio.onended=()=>{
-    learnAudio=new Audio(`https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${learnCurrentId}.ogg`);
+  learnAudio.onended = () => {
+    if (learnCurrentId !== capturedId) return;
+    learnAudio = new Audio(`https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${capturedId}.ogg`);
     learnAudio.play().catch(()=>{});
-    learnAudio.onended=()=>btn.classList.remove('playing');
+    learnAudio.onended = () => btn.classList.remove('playing');
   };
 }
 
