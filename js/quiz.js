@@ -649,33 +649,32 @@ async function renderQuestion() {
 }
 
 function renderWhosQuestion(q) {
-  const img=document.getElementById('pokemon-img'), spn=document.getElementById('spinner');
-  document.getElementById('options-grid').innerHTML='';
-  img.style.opacity='0'; spn.style.display='block';
-  img.className=''; img.src='';
+const img=document.getElementById('pokemon-img'), spn=document.getElementById('spinner');
+document.getElementById('options-grid').innerHTML='';
+img.style.opacity='0'; spn.style.display='block';
+img.className=''; img.src='';
 
-  img.onload=()=>{ spn.style.display='none'; img.style.opacity='1'; preloadNext(); };
-  img.onerror=()=>{ img.onerror=null; img.src=fallbackUrl(q.correct.id); };
+img.onload=()=>{
+spn.style.display='none';
+requestAnimationFrame(()=>{
+requestAnimationFrame(()=>{
+img.style.opacity='1';
+});
+});
+preloadNext();
+};
+img.onerror=()=>{ img.onerror=null; img.src=fallbackUrl(q.correct.id); };
 
-  img.onload=()=>{
-    spn.style.display='none';
-    requestAnimationFrame(()=>{        // frame 1: CSS filter is computed
-      requestAnimationFrame(()=>{      // frame 2: CSS filter is painted
-        img.style.opacity='1';         // NOW show - silhouette guaranteed
-      });
-    });
-    preloadNext();
-  };
-  img.onerror=()=>{ img.onerror=null; img.src=fallbackUrl(q.correct.id); };
-  img.src=gifUrl(q.correct.name);
+if(difficulty==='hard') img.classList.add('silhouette');
+img.src=gifUrl(q.correct.name);
 
-  q.options.forEach(opt=>{
-    const btn=document.createElement('button');
-    btn.className='opt-btn'; btn.textContent=displayName(opt.name);
-    btn.style.fontFamily="'Flexo', sans-serif";
-    btn.onclick=()=>checkAnswer('whos',opt.name,q.correct.name,btn);
-    document.getElementById('options-grid').appendChild(btn);
-  });
+q.options.forEach(opt=>{
+const btn=document.createElement('button');
+btn.className='opt-btn'; btn.textContent=displayName(opt.name);
+btn.style.fontFamily="'Flexo', sans-serif";
+btn.onclick=()=>checkAnswer('whos',opt.name,q.correct.name,btn);
+document.getElementById('options-grid').appendChild(btn);
+});
 }
 
 function renderIdentifyQuestion(q) {

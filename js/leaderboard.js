@@ -27,16 +27,19 @@ function stopResultAudio() {
   if(resultAudio){ resultAudio.pause(); resultAudio.currentTime=0; resultAudio=null; }
 }
 
+// ── Current score fingerprint (used to highlight only THIS submission) ──
+let currentScoreFingerprint = null;
+
 // ── Show Results ─────────────────────────────────────────────────
 function showResults() {
   stopTimer();
   const pct = answeredCount===0 ? 0 : Math.round(correctCount/answeredCount*100);
   const tiers=[
-    [100,'🏆','Perfect score! True Pokémon Master!'],
-    [80, '🌟','Excellent! Almost a Pokémon Master!'],
-    [60, '😄','Good job, Trainer! Keep it up!'],
-    [40, '😅','Not bad, but keep training!'],
-    [0,  '😢','Time to revisit your Pokédex!']
+    [100,'\u{1F3C6}','Perfect score! True Pokémon Master!'],
+    [80, '\u{1F31F}','Excellent! Almost a Pokémon Master!'],
+    [60, '\u{1F604}','Good job, Trainer! Keep it up!'],
+    [40, '\u{1F605}','Not bad, but keep training!'],
+    [0,  '\u{1F622}','Time to revisit your Pokédex!']
   ];
   const [,emoji,msg]=tiers.find(([t])=>pct>=t);
   document.getElementById('result-emoji').textContent      = emoji;
@@ -67,17 +70,28 @@ function showResults() {
 async function submitScore(pct) {
   const statusEl = document.getElementById('lb-submit-status');
   const quizNames={whos:"Who's That Pokémon?",identify:'Identify the Pokémon',evo:'Spot the Evolution'};
+  const timeStr = getTimeString();
+  const dateStr = (()=>{
+    const now=new Date(), ist=new Date(now.getTime()+(5.5*60*60*1000));
+    return `${String(ist.getUTCDate()).padStart(2,'0')}/${String(ist.getUTCMonth()+1).padStart(2,'0')}/${ist.getUTCFullYear()}`;
+  })();
+
+  // ✅ Store fingerprint BEFORE sending so leaderboard can match exactly this row
+  currentScoreFingerprint = {
+    name:     playerName,
+    accuracy: pct,
+    time:     timeStr,
+    date:     dateStr
+  };
+
   const payload={
     quiz:       quizNames[quizType],
     name:       playerName,
     score:      `${correctCount}/${answeredCount}`,
-    accuracy:   pct,                                  // store as plain integer
-    time:       getTimeString(),
+    accuracy:   pct,
+    time:       timeStr,
     difficulty: difficulty.charAt(0).toUpperCase()+difficulty.slice(1),
-    date:(()=>{
-      const now=new Date(), ist=new Date(now.getTime()+(5.5*60*60*1000));
-      return `${String(ist.getUTCDate()).padStart(2,'0')}/${String(ist.getUTCMonth()+1).padStart(2,'0')}/${ist.getUTCFullYear()}`;
-    })()
+    date:       dateStr
   };
   try {
     await fetch(APPS_SCRIPT_URL,{
@@ -160,7 +174,7 @@ async function fetchLeaderboard() {
   const msgTimer = setInterval(showNextMsg, 5000);
 
   const controller = new AbortController();
-  const timeout = setTimeout(()=>controller.abort(), 40000); // 40s — enough for all messages
+  const timeout = setTimeout(()=>controller.abort(), 40000);
 
   try {
     const res = await fetch(`${APPS_SCRIPT_URL}?action=get`, {
@@ -211,7 +225,6 @@ function renderLeaderboardTable() {
   );
 
   // ── Normalise accuracy to 0–100 integer ──────────────────────
-  // Handles "85%" (string), 0.85 (decimal float), 85 (integer)
   data = data.map(r => {
     let acc = r.accuracy;
     if (typeof acc === 'string') {
@@ -244,9 +257,26 @@ function renderLeaderboardTable() {
     return;
   }
 
+  // ── Track if current submission already exists ─────────
+  let foundCurrentScore = false;
+
   const medals = ['🥇','🥈','🥉'];
   const rows = data.map((r,i) => {
-    const isYou     = r.name === playerName;
+    //  Match by (name + accuracy + time + date), only highlight ONCE
+    let isYou = false;
+    if (!foundCurrentScore && currentScoreFingerprint) {
+      const fp = currentScoreFingerprint;
+      const rowAcc = r._acc;
+      if (
+        r.name === fp.name &&
+        rowAcc  === fp.accuracy &&
+        r.time  === fp.time &&
+        r.date  === fp.date
+      ) {
+        isYou = true;
+        foundCurrentScore = true; // Only the first exact match gets highlighted
+      }
+    }
     const rank      = i < 3 ? medals[i] : `#${i+1}`;
     const rankClass = i < 3 ? `lb-rank lb-rank-${i+1}` : 'lb-rank';
     return `<tr class="${isYou ? 'lb-you' : ''}">
