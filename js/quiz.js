@@ -773,7 +773,7 @@ function checkAnswer(type,chosen,correct,btn) {
   if(chosen===correct){
     correctCount++; btn.classList.add('correct');
     fb.textContent=`✅ Correct! It's ${displayName(correct)}!`; fb.style.color='#28a745';
-    playCorrect(); burstConfetti();
+    playCorrect();
   } else {
     btn.classList.add('wrong');
     if(type==='whos') document.querySelectorAll('.opt-btn').forEach(b=>{ if(b.textContent===displayName(correct)) b.classList.add('correct'); });
@@ -801,7 +801,7 @@ function checkEvoAnswer(btn,evoQ,choseNone,chosenName) {
     correctCount++; btn.classList.add('correct');
     const msg=evoQ.answerIsNone?(evoQ.direction==='next'?'It does not evolve!':'It has no pre-evolution!'):`It's ${displayName(evoQ.answer.name)}!`;
     fb.textContent=`✅ Correct! ${msg}`; fb.style.color='#28a745';
-    playCorrect(); burstConfetti();
+    playCorrect();
   } else {
     btn.classList.add('wrong');
     document.querySelectorAll('.evo-opt-btn').forEach(b=>{
@@ -1081,3 +1081,33 @@ function celebrationConfetti(pct) {
     if(++fired>=rounds*2) clearInterval(iv);
   },340);
 }
+
+// ── Enter key support ────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+
+  // Welcome popup "Let's Go!" button
+  const popup = document.getElementById('welcome-popup');
+  if (popup && popup.style.display === 'flex') {
+    closeWelcomePopup(); return;
+  }
+
+  // Easter egg "Okay" button
+  const easterOverlay = document.getElementById('easter-overlay');
+  if (easterOverlay && easterOverlay.style.display === 'flex') {
+    closeEasterEgg(); return;
+  }
+
+  // "Begin Journey" / Start Quiz button
+  const startBtn = document.getElementById('start-btn');
+  if (startBtn && !startBtn.disabled && startBtn.offsetParent !== null) {
+    startBtn.click(); return;
+  }
+
+  // "Next Question" / "See Results" button
+  const nextBtn = document.getElementById('next-btn');
+  if (nextBtn && nextBtn.style.display !== 'none' && nextBtn.offsetParent !== null) {
+    nextBtn.click(); return;
+  }
+});
+
