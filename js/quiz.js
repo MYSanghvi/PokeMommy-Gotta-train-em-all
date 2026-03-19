@@ -182,7 +182,7 @@ function checkNightMode() {
     playNightChime();
     setTimeout(()=>{
       showEasterEgg('🌙', "Shouldn't you be asleep, Trainer?",
-        "It's late… but a true Pokémon Trainer never rests. Night mode activated. 🌟\n\nTake care of yourself — even Ash sleeps sometimes.");
+        "It's late… but a true Pokémon Trainer never rests. Night mode activated. 🌟\n\nTake care of yourself - even Ash sleeps sometimes.");
 
       document.body.style.background  = '#1a1a2e';
       document.body.style.transition  = 'background 1.5s ease';
@@ -272,17 +272,17 @@ const TRAINER_EGGS = {
                      body:'The Pewter City Gym Leader has arrived. Jelly-filled donuts for everyone!' },
   'maulishmaster': [
     { emoji:'🔍', img:'img/maulishmaster.png',
-      title:'True Trainer Detected!',
-      body:"You didn't just play the game. You went looking for more. That's the kind of trainer energy we love." },
+      title:'Hall of Fame: One Entry',
+      body:"This slot was reserved before the game even launched. Only one name was ever going to go here." },
     { emoji:'🗝️', img:'img/maulishmaster.png',
-      title:'The Pokédex Knows a Secret!',
-      body:"You typed the magic words. The Pokédex has unlocked a secret it doesn't even know about." },
+      title:'Interesting Name Choice',
+      body:"The original owner of that name never lost a round. Just saying. No pressure. Okay, full pressure." },
     { emoji:'🥚', img:'img/maulishmaster.png',
-      title:'Easter Egg Discovered!',
-      body:'You found the easter egg. You typed the magic name. You are now officially the coolest trainer here.' },
+      title:'Legendary Status: Unverified',
+      body:"The name checks out. The legend? That part's still up to you. Don't let the Pokédex down." },
     { emoji:'⚡', img:'img/maulishmaster.png',
-      title:'A Legendary Name…',
-      body:"Only the most legendary trainers carry that name. Let's see if you live up to it." }
+      title:'Prove It.',
+      body:"Anyone can type a legendary name. Not everyone can back it up. You're being watched. Go ahead, prove it." }
   ],
   'thewifey': [
     { emoji:'💛', img:'img/thewifey.png',
@@ -302,7 +302,7 @@ const TRAINER_EGGS = {
       body:"Out of all the trainers in the world, you're the one I choose. Now go catch that high score." },
     { emoji:'🍼', img:'img/thewifey.png',
       title:'Future Pokémon Mom',
-      body:"Soon you'll be raising two things: a baby… and a new generation of Pokémon trainers." }
+      body:"Soon you'll be raising two things: a baby and a new generation of Pokémon trainers." }
   ],
   'helu': [
     { emoji:'🎮', img:'img/helu.png',
@@ -312,8 +312,8 @@ const TRAINER_EGGS = {
       title:'Rival Battle!',
       body:"Warning: childhood Pokémon rivalry detected. Prepare for intense sibling competition." },
     { emoji:'🕹️', img:'img/helu.png',
-      title:'The OG Player 2',
-      body:"From fighting over the GameBoy to battling over Pokémon Emerald - some things never change." },
+      title:'Chaos Black Survivor',
+      body:"You didn’t just play Pokémon you survived the chaos, the glitches, and whatever Chaos Black threw at you." },
 	{ emoji:'⚡', img:'img/helu.png',
       title:'Sibling Rival Activated',
       body:"All childhood Pokémon debates are about to be settled. Once and for all." },
@@ -339,7 +339,7 @@ function checkTrainerNameEgg(name) {
     document.getElementById('btn-hard').classList.add('selected');
     checkReady();
   }
-  if (key === 'maulish' || key === 'maulishmaster') {
+  if (key === 'maulishmaster') {
     const variants = TRAINER_EGGS['maulishmaster'];
     const egg = variants[Math.floor(Math.random() * variants.length)];
     playSecretJingle();
@@ -661,7 +661,7 @@ function renderWhosQuestion(q) {
     spn.style.display='none';
     requestAnimationFrame(()=>{        // frame 1: CSS filter is computed
       requestAnimationFrame(()=>{      // frame 2: CSS filter is painted
-        img.style.opacity='1';         // NOW show — silhouette guaranteed
+        img.style.opacity='1';         // NOW show - silhouette guaranteed
       });
     });
     preloadNext();
@@ -833,13 +833,13 @@ async function revealHint(level) {
   const card=document.createElement('div'); card.className='hint-card';
   if(level===1){
     const g=currentPokemonData.species.genera.find(g=>g.language.name==='en');
-    card.innerHTML=`<strong>🏷️ Hint 1 — Category</strong>${g?g.genus:'Unknown'}`;
+    card.innerHTML=`<strong>🏷️ Hint 1 - Category</strong>${g?g.genus:'Unknown'}`;
   } else if(level===2){
     const b=currentPokemonData.types.map(t=>`<span class="type-badge t-${t.type.name}">${capitalize(t.type.name)}</span>`).join('');
-    card.innerHTML=`<strong>⚡ Hint 2 — Type</strong>${b}`;
+    card.innerHTML=`<strong>⚡ Hint 2 - Type</strong>${b}`;
   } else {
     const e=currentPokemonData.species.flavor_text_entries.find(e=>e.language.name==='en'&&(e.version.name==='red'||e.version.name==='blue'))||currentPokemonData.species.flavor_text_entries.find(e=>e.language.name==='en');
-    card.innerHTML=`<strong>📖 Hint 3 — Pokédex Entry</strong><span class="entry-text">${e?e.flavor_text.replace(/[\f\n\r]/g,' '):'No entry found.'}</span>`;
+    card.innerHTML=`<strong>📖 Hint 3 - Pokédex Entry</strong><span class="entry-text">${e?e.flavor_text.replace(/[\f\n\r]/g,' '):'No entry found.'}</span>`;
   }
   document.getElementById('hint-cards').appendChild(card);
 }
