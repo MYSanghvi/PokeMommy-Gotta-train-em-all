@@ -166,13 +166,16 @@ input[type="text"]:focus { border-color: #3D7DCA; }
 .accuracy-badge .pct { font-family: 'Flexo', sans-serif; font-size: 11px; color: #3D7DCA; }
 .accuracy-badge .lbl { color: #888; font-size: 12px; font-family: 'Roboto', sans-serif; }
 
+#pokemon-img {
+  will-change: filter, opacity;
+}
 /* ── WHO'S THAT ── */
 .pokemon-img-wrap {
   width: 230px; height: 230px; margin: 0 auto 14px; display: flex;
   align-items: center; justify-content: center; background: #f7f7f7;
   border-radius: 50%; position: relative; overflow: hidden;
 }
-#pokemon-img { max-width: 215px; max-height: 179px; object-fit: contain; image-rendering: pixelated; transition: filter .4s, opacity .3s; }
+#pokemon-img { max-width: 180px; max-height: 180px; object-fit: contain; image-rendering: pixelated; transition: opacity .3s; }
 #pokemon-img.silhouette { filter: brightness(0); }
 .spinner {
   display: none; width: 36px; height: 36px; border: 4px solid #eee;

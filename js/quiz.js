@@ -649,32 +649,45 @@ async function renderQuestion() {
 }
 
 function renderWhosQuestion(q) {
-const img=document.getElementById('pokemon-img'), spn=document.getElementById('spinner');
-document.getElementById('options-grid').innerHTML='';
-img.style.opacity='0'; spn.style.display='block';
-img.className=''; img.src='';
+  const img = document.getElementById('pokemon-img'),
+        spn = document.getElementById('spinner');
 
-img.onload=()=>{
-spn.style.display='none';
-requestAnimationFrame(()=>{
-requestAnimationFrame(()=>{
-img.style.opacity='1';
-});
-});
-preloadNext();
-};
-img.onerror=()=>{ img.onerror=null; img.src=fallbackUrl(q.correct.id); };
+  document.getElementById('options-grid').innerHTML = '';
 
-if(difficulty==='hard') img.classList.add('silhouette');
-img.src=gifUrl(q.correct.name);
+  img.style.opacity = '0';
+  spn.style.display = 'block';
 
-q.options.forEach(opt=>{
-const btn=document.createElement('button');
-btn.className='opt-btn'; btn.textContent=displayName(opt.name);
-btn.style.fontFamily="'Flexo', sans-serif";
-btn.onclick=()=>checkAnswer('whos',opt.name,q.correct.name,btn);
-document.getElementById('options-grid').appendChild(btn);
-});
+  // ⭐ CRITICAL: reset FIRST
+  img.classList.remove('silhouette');
+
+  // ⭐ apply silhouette BEFORE src load
+  if (difficulty === 'hard') {
+    img.classList.add('silhouette');
+  }
+
+  img.onload = () => {
+    spn.style.display = 'none';
+    img.style.opacity = '1';
+    preloadNext();
+  };
+
+  img.onerror = () => {
+    img.onerror = null;
+    img.src = fallbackUrl(q.correct.id);
+  };
+
+  img.src = gifUrl(q.correct.name);
+
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = displayName(opt.name);
+    btn.style.fontFamily = "'Flexo', sans-serif";
+    btn.onclick = () =>
+      checkAnswer('whos', opt.name, q.correct.name, btn);
+
+    document.getElementById('options-grid').appendChild(btn);
+  });
 }
 
 function renderIdentifyQuestion(q) {
@@ -1120,4 +1133,3 @@ document.addEventListener('keydown', (e) => {
     }
   }
 });
-
