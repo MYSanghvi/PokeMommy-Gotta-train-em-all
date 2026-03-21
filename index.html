@@ -78,14 +78,20 @@
 
 <!-- ── Welcome Message Ends ── -->
 <!-- ── Easter Egg Overlay ── -->
-<!-- Easter Egg Overlay -->
-<div id="easter-overlay" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.82); align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:32px; font-family:Flexo,sans-serif; color:#fff;">
-  <div id="easter-card" style="position:relative; display:flex; flex-direction:column; align-items:center;">
-    <div id="easter-emoji" style="font-size:64px; margin-bottom:16px;"></div>
-    <div id="easter-title" style="font-size:22px; font-weight:700; margin-bottom:10px; color:#FFCB05;"></div>
-    <div id="easter-body" style="font-size:14px; line-height:1.7; color:#eee; max-width:320px;"></div>
-    <button id="easter-close" onclick="closeEasterEgg()" style="margin-top:28px; background:#FFCB05; color:#003A70; border:none; border-radius:10px; padding:12px 28px; font-size:14px; font-weight:700; cursor:pointer; font-family:Flexo,sans-serif;">Got it!</button>
-  </div>
+<div id="easter-overlay" style="
+  display:none; position:fixed; inset:0; z-index:9999;
+  background:rgba(0,0,0,0.82); align-items:center; justify-content:center;
+  flex-direction:column; text-align:center; padding:32px;
+  font-family:'Flexo',sans-serif; color:#fff;
+">
+  <div id="easter-emoji"  style="font-size:64px; margin-bottom:16px;"></div>
+  <div id="easter-title"  style="font-size:22px; font-weight:700; margin-bottom:10px; color:#FFCB05;"></div>
+  <div id="easter-body"   style="font-size:14px; line-height:1.7; color:#eee; max-width:320px;"></div>
+  <button onclick="closeEasterEgg()" style="
+    margin-top:28px; background:#FFCB05; color:#003A70; border:none;
+    border-radius:10px; padding:12px 28px; font-size:14px; font-weight:700;
+    cursor:pointer; font-family:'Flexo',sans-serif;
+  ">Got it!</button>
 </div>
 
 <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()" title="Toggle Sound">🔊</button>
@@ -141,7 +147,7 @@
     <button class="back-link" onclick="goHome()">‹ Back</button>
     <h1 id="welcome-title">Who's That Pokémon?</h1>
     <label for="player-name">Your Trainer Name</label>
-    <input type="text" id="player-name" placeholder="Brock / Misty" maxlength="20"/>
+    <input type="text" id="player-name" placeholder="Ash Ketchum…" maxlength="20"/>
     <label>Quiz Mode</label>
     <div class="toggle-row">
       <button class="toggle-btn active" id="btn-quick" onclick="selectMode('quick')">
