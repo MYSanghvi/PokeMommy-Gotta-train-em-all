@@ -1,4 +1,4 @@
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwskA_4HLugLCfdbpQYcU7rvm_f-g2LSoxT-xWHuXuOwLNoZJt51KcQEoA3uE3Voj6a/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbythw_Uezk8xyKcO-HxIEByGyofTJ4AwkUC2pZLaDjAWBWoQ-ZJMd-qSe5YKwsOLM0/exec';
 
 // ── Timer ────────────────────────────────────────────────────────
 let timerInterval=null, timerSeconds=0;
@@ -27,19 +27,16 @@ function stopResultAudio() {
   if(resultAudio){ resultAudio.pause(); resultAudio.currentTime=0; resultAudio=null; }
 }
 
-// ── Current score fingerprint (used to highlight only THIS submission) ──
-let currentScoreFingerprint = null;
-
 // ── Show Results ─────────────────────────────────────────────────
 function showResults() {
   stopTimer();
   const pct = answeredCount===0 ? 0 : Math.round(correctCount/answeredCount*100);
   const tiers=[
-    [100,'\u{1F3C6}','Perfect score! True Pokémon Master!'],
-    [80, '\u{1F31F}','Excellent! Almost a Pokémon Master!'],
-    [60, '\u{1F604}','Good job, Trainer! Keep it up!'],
-    [40, '\u{1F605}','Not bad, but keep training!'],
-    [0,  '\u{1F622}','Time to revisit your Pokédex!']
+    [100,'🏆','Perfect score! True Pokémon Master!'],
+    [80, '🌟','Excellent! Almost a Pokémon Master!'],
+    [60, '😄','Good job, Trainer! Keep it up!'],
+    [40, '😅','Not bad, but keep training!'],
+    [0,  '😢','Time to revisit your Pokédex!']
   ];
   const [,emoji,msg]=tiers.find(([t])=>pct>=t);
   document.getElementById('result-emoji').textContent      = emoji;
@@ -68,61 +65,52 @@ function showResults() {
 
 // ── Submit Score ─────────────────────────────────────────────────
 async function submitScore(pct) {
-  const statusEl = document.getElementById('lb-submit-status');
-  const quizNames={whos:"Who's That Pokémon?",identify:'Identify the Pokémon',evo:'Spot the Evolution'};
-  const timeStr = getTimeString();
-  const dateStr = (()=>{
-    const now=new Date(), ist=new Date(now.getTime()+(5.5*60*60*1000));
-    return `${String(ist.getUTCDate()).padStart(2,'0')}/${String(ist.getUTCMonth()+1).padStart(2,'0')}/${ist.getUTCFullYear()}`;
-  })();
-
-  // ✅ Store fingerprint BEFORE sending so leaderboard can match exactly this row
-  currentScoreFingerprint = {
-    name:     playerName,
-    accuracy: pct,
-    time:     timeStr,
-    date:     dateStr
-  };
-
-  const payload={
-    quiz:       quizNames[quizType],
-    name:       playerName,
-    score:      `${correctCount}/${answeredCount}`,
-    accuracy:   pct,
-    time:       timeStr,
-    difficulty: difficulty.charAt(0).toUpperCase()+difficulty.slice(1),
-    date:       dateStr
-  };
-  try {
-    await fetch(APPS_SCRIPT_URL,{
-      method:'POST', mode:'no-cors',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
-    });
-    statusEl.textContent='✅ Score saved!';
-  } catch(e) {
-    statusEl.textContent='⚠️ Could not save score.';
-  }
-  setTimeout(()=>{ statusEl.textContent=''; }, 3000);
+const statusEl = document.getElementById('lb-submit-status');
+const quizNames={whos:"Who's That Pokémon?",identify:'Identify the Pokémon',evo:'Spot the Evolution'};
+const payload={
+quiz: quizNames[quizType],
+name: playerName,
+score: `${correctCount}/${answeredCount}`,
+accuracy: pct,
+time: getTimeString(),
+difficulty: difficulty.charAt(0).toUpperCase()+difficulty.slice(1),
+mode: quizMode === 'full' ? 'Full Test' : 'Quick Test',
+date:(()=>{
+const now=new Date(), ist=new Date(now.getTime()+(5.5*60*60*1000));
+return `${String(ist.getUTCDate()).padStart(2,'0')}/${String(ist.getUTCMonth()+1).padStart(2,'0')}/${ist.getUTCFullYear()}`;
+})()
+};
+try {
+await fetch(APPS_SCRIPT_URL,{
+method:'POST', mode:'no-cors',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify(payload)
+});
+statusEl.textContent='✅ Score saved!';
+} catch(e) {
+statusEl.textContent='⚠️ Could not save score.';
+}
+setTimeout(()=>{ statusEl.textContent=''; }, 3000);
 }
 
 // ── Leaderboard ──────────────────────────────────────────────────
 let lbAllData=[];
 
 function showLeaderboard() {
-  playClick();
+playClick();
 
-  const quizLabels={
-    whos:"Who's That Pokémon?",
-    identify:'Identify the Pokémon',
-    evo:'Spot the Evolution'
-  };
-  const diffLabel = difficulty.charAt(0).toUpperCase()+difficulty.slice(1);
-  document.getElementById('lb-title').textContent =
-    `🏆 ${quizLabels[quizType]} — ${diffLabel}`;
+const quizLabels={
+whos:"Who's That Pokémon?",
+identify:'Identify the Pokémon',
+evo:'Spot the Evolution'
+};
+const diffLabel = difficulty.charAt(0).toUpperCase()+difficulty.slice(1);
+const modeLabel = quizMode === 'full' ? 'Full Test' : 'Quick Test';
+document.getElementById('lb-title').textContent =
+`${quizLabels[quizType]} - ${diffLabel} ${modeLabel}`;
 
-  showScreen('leaderboard-screen');
-  fetchLeaderboard();
+showScreen('leaderboard-screen');
+fetchLeaderboard();
 }
 
 function closeLeaderboard() {
@@ -174,7 +162,7 @@ async function fetchLeaderboard() {
   const msgTimer = setInterval(showNextMsg, 5000);
 
   const controller = new AbortController();
-  const timeout = setTimeout(()=>controller.abort(), 40000);
+  const timeout = setTimeout(()=>controller.abort(), 40000); // 40s — enough for all messages
 
   try {
     const res = await fetch(`${APPS_SCRIPT_URL}?action=get`, {
@@ -217,14 +205,18 @@ function renderLeaderboardTable() {
     evo:'Spot the Evolution'
   };
 
-  // Filter to current quiz + difficulty only
-  let data = lbAllData.filter(r =>
-    r.quiz === quizNames[quizType] &&
-    r.difficulty &&
-    r.difficulty.toLowerCase() === difficulty.toLowerCase()
-  );
+// Filter to current quiz + difficulty + mode
+const currentMode = quizMode === 'full' ? 'Full Test' : 'Quick Test';
+let data = lbAllData.filter(r => {
+const rowMode = (r.mode && r.mode.trim() !== '') ? r.mode : 'Quick Test';
+return r.quiz === quizNames[quizType] &&
+r.difficulty &&
+r.difficulty.toLowerCase() === difficulty.toLowerCase() &&
+rowMode === currentMode;
+});
 
   // ── Normalise accuracy to 0–100 integer ──────────────────────
+  // Handles "85%" (string), 0.85 (decimal float), 85 (integer)
   data = data.map(r => {
     let acc = r.accuracy;
     if (typeof acc === 'string') {
@@ -257,26 +249,9 @@ function renderLeaderboardTable() {
     return;
   }
 
-  // ── Track if current submission already exists ─────────
-  let foundCurrentScore = false;
-
   const medals = ['🥇','🥈','🥉'];
   const rows = data.map((r,i) => {
-    //  Match by (name + accuracy + time + date), only highlight ONCE
-    let isYou = false;
-    if (!foundCurrentScore && currentScoreFingerprint) {
-      const fp = currentScoreFingerprint;
-      const rowAcc = r._acc;
-      if (
-        r.name === fp.name &&
-        rowAcc  === fp.accuracy &&
-        r.time  === fp.time &&
-        r.date  === fp.date
-      ) {
-        isYou = true;
-        foundCurrentScore = true; // Only the first exact match gets highlighted
-      }
-    }
+    const isYou     = r.name === playerName;
     const rank      = i < 3 ? medals[i] : `#${i+1}`;
     const rankClass = i < 3 ? `lb-rank lb-rank-${i+1}` : 'lb-rank';
     return `<tr class="${isYou ? 'lb-you' : ''}">
