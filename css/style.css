@@ -166,16 +166,13 @@ input[type="text"]:focus { border-color: #3D7DCA; }
 .accuracy-badge .pct { font-family: 'Flexo', sans-serif; font-size: 11px; color: #3D7DCA; }
 .accuracy-badge .lbl { color: #888; font-size: 12px; font-family: 'Roboto', sans-serif; }
 
-#pokemon-img {
-  will-change: filter, opacity;
-}
 /* ── WHO'S THAT ── */
 .pokemon-img-wrap {
   width: 230px; height: 230px; margin: 0 auto 14px; display: flex;
   align-items: center; justify-content: center; background: #f7f7f7;
   border-radius: 50%; position: relative; overflow: hidden;
 }
-#pokemon-img { max-width: 180px; max-height: 180px; object-fit: contain; image-rendering: pixelated; transition: opacity .3s; }
+#pokemon-img { max-width: 215px; max-height: 179px; object-fit: contain; image-rendering: pixelated; transition: filter .4s, opacity .3s; }
 #pokemon-img.silhouette { filter: brightness(0); }
 .spinner {
   display: none; width: 36px; height: 36px; border: 4px solid #eee;
@@ -500,121 +497,3 @@ input[type="text"]:focus { border-color: #3D7DCA; }
 
 .screen { animation: fadeIn .35s ease; }
 @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-
-/* ══════════ MAULISHMASTER — THE CHOSEN ONE ══════════ */
-#maulish-cosmic {
-  display:none; position:fixed; inset:0; z-index:9985; pointer-events:none;
-  background:radial-gradient(ellipse at 50% 50%, #12002e 0%, #000010 60%, #000 100%);
-  opacity:0; transition:opacity .7s ease;
-}
-#maulish-star-canvas {
-  position:fixed; inset:0; z-index:9986; pointer-events:none;
-  opacity:0; transition:opacity 1s ease;
-}
-#maulish-edge-aura {
-  display:none; position:fixed; inset:0; z-index:9987; pointer-events:none;
-}
-#maulish-edge-aura.pulse {
-  animation:maulishEdgePulse 2s ease-in-out infinite alternate;
-}
-@keyframes maulishEdgePulse {
-  from { box-shadow:inset 0 0 80px rgba(160,80,255,0.25), inset 0 0 200px rgba(255,215,0,0.08); }
-  to   { box-shadow:inset 0 0 140px rgba(200,100,255,0.5), inset 0 0 300px rgba(255,215,0,0.15); }
-}
-#maulish-light-pillar {
-  display:none; position:fixed; left:50%; bottom:0;
-  transform:translateX(-50%); z-index:9989; pointer-events:none;
-  width:200px; height:0;
-  background:linear-gradient(to top, rgba(255,215,0,0.6) 0%, rgba(255,215,0,0.15) 50%, transparent 100%);
-  transition:height 0.7s cubic-bezier(0.25,0.46,0.45,0.94);
-  filter:blur(12px);
-}
-.maulish-energy-ring {
-  position:fixed; border-radius:50%; pointer-events:none; z-index:9988;
-  top:50%; left:50%; transform:translate(-50%,-50%) scale(0);
-  animation:maulishRingExpand 1.1s cubic-bezier(0.2,0.6,0.4,1) forwards;
-}
-@keyframes maulishRingExpand {
-  0%   { transform:translate(-50%,-50%) scale(0); opacity:1; }
-  100% { transform:translate(-50%,-50%) scale(4.5); opacity:0; }
-}
-.maulish-energy-particle {
-  position:fixed; border-radius:50%; pointer-events:none; z-index:9994;
-  animation:maulishParticleRise linear forwards;
-}
-@keyframes maulishParticleRise {
-  0%   { opacity:1; transform:translateY(0) translateX(0) scale(1); }
-  100% { opacity:0; transform:translateY(-260px) translateX(var(--drift)) scale(0.15); }
-}
-#easter-overlay.maulish-active { background:transparent !important; }
-#easter-card.maulish-active {
-  background:linear-gradient(160deg, #1a0035 0%, #0d001a 50%, #1a0035 100%) !important;
-  border:1.5px solid rgba(255,215,0,0.4) !important;
-  border-radius:20px; padding:28px 24px;
-  animation:maulishCardRise 0.8s cubic-bezier(0.175,0.885,0.32,1.1) forwards,
-            maulishCardAura 3s ease-in-out 0.8s infinite alternate !important;
-}
-@keyframes maulishCardRise {
-  0%   { transform:translateY(80px) scale(0.85); opacity:0; }
-  60%  { transform:translateY(-12px) scale(1.03); opacity:1; }
-  80%  { transform:translateY(5px) scale(0.99); opacity:1; }
-  100% { transform:translateY(0) scale(1); opacity:1; }
-}
-@keyframes maulishCardAura {
-  from { box-shadow:0 0 30px rgba(160,80,255,0.5), 0 0 60px rgba(255,215,0,0.2), 0 20px 60px rgba(0,0,0,0.8); }
-  to   { box-shadow:0 0 80px rgba(180,80,255,0.9), 0 0 150px rgba(255,215,0,0.4), 0 20px 60px rgba(0,0,0,0.8); border-color:rgba(255,215,0,1) !important; }
-}
-#easter-card.maulish-active #easter-title {
-  color:#FFD700 !important;
-  text-shadow:0 0 25px rgba(255,215,0,.9), 0 0 50px rgba(160,80,255,.6);
-}
-#easter-card.maulish-active #easter-body  { color:rgba(255,255,255,.75) !important; }
-#easter-card.maulish-active #easter-close {
-  background:linear-gradient(90deg,#9B30FF,#6a0dad,#9B30FF) !important;
-  background-size:200% 100% !important;
-  border:1.5px solid rgba(255,215,0,0.5) !important;
-  color:#fff !important;
-  box-shadow:0 4px 20px rgba(155,48,255,0.55) !important;
-  animation:maulishBtnShimmer 2s linear infinite;
-}
-@keyframes maulishBtnShimmer { to { background-position:-200% 0; } }
-.maulish-halo-ring {
-  position:absolute; inset:-14px; border-radius:28px; pointer-events:none; z-index:0;
-  animation:maulishHaloSpin 3s linear infinite;
-}
-@keyframes maulishHaloSpin {
-  0%   { box-shadow:0 0 0 2px #FFD700, 0 0 12px #FFD700; }
-  25%  { box-shadow:0 0 0 2px #9B30FF, 0 0 12px #9B30FF; }
-  50%  { box-shadow:0 0 0 2px #00BFFF, 0 0 12px #00BFFF; }
-  75%  { box-shadow:0 0 0 2px #9B30FF, 0 0 12px #9B30FF; }
-  100% { box-shadow:0 0 0 2px #FFD700, 0 0 12px #FFD700; }
-}
-.maulish-nebula {
-  position:absolute; inset:0; border-radius:20px; pointer-events:none; z-index:0; opacity:.35;
-  background:radial-gradient(ellipse at 30% 40%, rgba(120,0,255,0.4) 0%, transparent 60%),
-             radial-gradient(ellipse at 75% 65%, rgba(255,100,0,0.25) 0%, transparent 55%),
-             radial-gradient(ellipse at 55% 20%, rgba(0,180,255,0.2) 0%, transparent 50%);
-  animation:maulishNebulaDrift 5s ease-in-out infinite alternate;
-}
-@keyframes maulishNebulaDrift {
-  from { opacity:.3; transform:scale(1) rotate(0deg); }
-  to   { opacity:.45; transform:scale(1.05) rotate(3deg); }
-}
-.maulish-chosen-banner {
-  font-size:9px; font-weight:900; letter-spacing:4px; text-transform:uppercase;
-  color:rgba(255,215,0,0.6); margin-bottom:6px; display:block;
-  animation:maulishBannerFade 0.6s ease 1.2s both;
-}
-@keyframes maulishBannerFade {
-  from { opacity:0; letter-spacing:8px; }
-  to   { opacity:1; letter-spacing:4px; }
-}
-#easter-card.maulish-active #easter-emoji {
-  position:relative; z-index:1;
-  animation:maulishEmojiAura 2s ease-in-out infinite alternate;
-}
-@keyframes maulishEmojiAura {
-  from { filter:drop-shadow(0 0 16px rgba(255,215,0,.9)) drop-shadow(0 0 30px rgba(160,80,255,.6)); transform:scale(1); }
-  to   { filter:drop-shadow(0 0 28px rgba(255,215,0,1)) drop-shadow(0 0 60px rgba(180,100,255,.9)); transform:scale(1.06); }
-}
-/* ══════════ END CHOSEN ONE ══════════ */
