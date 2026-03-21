@@ -23,13 +23,11 @@
     padding:28px 24px; box-shadow:0 8px 40px rgba(0,58,112,0.25);
     font-family:'Flexo',sans-serif; text-align:center; position:relative;">
     
-    <div style="font-size:40px; margin-bottom:8px;">🎮</div>
+    <div style="font-size:40px; margin-bottom:8px;"><img src="img/oak.png" alt="Professor Oak" style="width:80px;height:80px;object-fit:contain;"></div>
     <h2 style="color:#003A70; font-size:20px; margin:0 0 6px;">
-      Welcome, Trainer!
+      Welcome to the <br> world of POKéMON!
     </h2>
-    <p style="color:#3D7DCA; font-size:12px; font-weight:600; margin:0 0 14px; letter-spacing:0.5px;">
-      A New Journey Begins...
-    </p>
+    
 
     <p style="color:#444; font-size:13.5px; line-height:1.65; margin:0 0 14px;">
       This game was built for one special person — but every trainer is welcome here. 
@@ -45,8 +43,7 @@
       <p style="margin:0; font-size:13px; color:#555; line-height:1.6;">
         Some trainer names unlock <em>special surprises</em>. 
         Try names like <strong>Ash</strong>, <strong>Brock</strong>, or 
-        maybe something a little more… legendary. 👀
-      </p>
+        maybe something a little more… legendary.</p>
     </div>
 
     <div style="background:#fffbf0; border:1px dashed #FFCB05; border-radius:12px;
@@ -66,12 +63,9 @@
       padding:13px 0; width:100%; font-size:15px; font-weight:700;
       font-family:'Flexo',sans-serif; cursor:pointer; letter-spacing:0.3px;
       transition:background 0.2s;">
-      Begin Journey!
+      Continue
     </button>
 
-    <p style="margin:10px 0 0; font-size:11px; color:#aaa;">
-      Your very own adventure is about to unfold!
-    </p>
   </div>
 </div>
 
@@ -81,7 +75,7 @@
 <!-- Trainer Name Popup -->
 <div id="name-popup" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; font-family:Flexo,sans-serif;">
   <div style="background:#fff; border-radius:20px; padding:32px 28px; max-width:340px; width:90%; text-align:center; box-shadow:0 8px 40px rgba(0,58,112,0.25);">
-    <div style="font-size:40px; margin-bottom:10px;">🎮</div>
+    <div style="font-size:40px; margin-bottom:10px;"><img src="img/oak.png" alt="Professor Oak" style="width:80px;height:80px;object-fit:contain;"></div>
     <h2 style="color:#003A70; font-size:20px; margin:0 0 6px;">What's your Trainer name?</h2>
     <p style="color:#555; font-size:13px; margin:0 0 18px; line-height:1.5;">You can change it anytime by refreshing the page.</p>
     <input id="name-popup-input" type="text" placeholder="Enter your name…" maxlength="20"
@@ -89,8 +83,11 @@
       oninput="checkNamePopupReady()" onkeydown="if(event.key==='Enter')confirmTrainerName()">
     <button id="name-popup-btn" onclick="confirmTrainerName()" disabled
       style="width:100%; background:#FFCB05; color:#003A70; border:none; border-radius:12px; padding:13px; font-size:15px; font-weight:700; cursor:pointer; font-family:Flexo,sans-serif; opacity:0.5;">
-      Begin Journey! 🚀
+      Begin Journey!
     </button>
+	<p style="margin:10px 0 0; font-size:11px; color:#aaa;">
+      Your very own adventure is about to unfold!
+    </p>
   </div>
 </div>
 <!-- Trainer Name Popup Ends-->
@@ -186,7 +183,7 @@
   <div id="game-screen" class="screen">
     <div class="top-bar">
       <span class="trainer">🎮 <span id="player-display"></span></span>
-      <span style="font-size:9px;">Question <span id="q-num">1</span> / <span id="q-total">20</span></span>
+      <span style="font-size:12px;">Question <span id="q-num">1</span> / <span id="q-total">20</span></span>
       <span class="timer-display" id="timer-display">0:00</span>
       <button class="reset-btn" onclick="confirmReset()">↩ Reset</button>
     </div>
