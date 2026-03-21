@@ -57,6 +57,8 @@ let quizType=null, difficulty=null, quizMode='quick', playerName='';
 let allPokemon=[], questions=[], currentQ=0, correctCount=0, answeredCount=0;
 let hintsRevealed=0, currentPokemonData=null;
 let autoNextTimer=null;
+let onEasterEggClose = null;
+let elapsedSeconds = 0;
 const QUICK_COUNT=20;
 
 // ════════════════════════════════════════════════════════════════
@@ -75,6 +77,58 @@ function closeWelcomePopup() {
   popup.style.display = 'none';
   document.body.style.overflow = '';
   playClick();
+  const saved = localStorage.getItem('pokemommy_trainer_name');
+  if (saved) {
+    document.getElementById('name-popup-input').value = saved;
+    checkNamePopupReady();
+  }
+  showNamePopup();
+}
+
+// ── Trainer Name Popup ───────────────────────────────────────────
+function showNamePopup() {
+  const popup = document.getElementById('name-popup');
+  popup.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('name-popup-input').focus(), 100);
+}
+
+function checkNamePopupReady() {
+  const val = document.getElementById('name-popup-input').value.trim();
+  const btn = document.getElementById('name-popup-btn');
+  btn.disabled = !val;
+  btn.style.opacity = val ? '1' : '0.5';
+}
+
+function confirmTrainerName() {
+  const val = document.getElementById('name-popup-input').value.trim();
+  if (!val) return;
+
+  if (val.toLowerCase().replace(/\s+/g, '') === 'missingno') {
+    triggerMissingNo();
+    document.getElementById('name-popup-input').value = '';
+    checkNamePopupReady();
+    return;
+  }
+
+  playerName = val;
+  document.getElementById('player-name').value = val;
+  localStorage.setItem('pokemommy_trainer_name', val);
+  document.getElementById('name-popup').style.display = 'none';
+  document.body.style.overflow = '';
+  playClick();
+
+  const hadEgg = checkTrainerNameEgg(val);
+  if (hadEgg) {
+    // Night mode fires after the easter egg is closed
+    const prevClose = onEasterEggClose;
+    onEasterEggClose = () => {
+      if (prevClose) prevClose();
+      setTimeout(checkNightMode, 300);
+    };
+  } else {
+    setTimeout(checkNightMode, 300);
+  }
 }
 
 
@@ -99,14 +153,298 @@ function showEasterEgg(emoji, title, body, img=null) {
   vibrate([50,30,50,30,100]);
 }
 
-let onEasterEggClose = null;
 function closeEasterEgg() {
-  document.getElementById('easter-overlay').style.display = 'none';
-  if (onEasterEggClose) {
-    onEasterEggClose();
-    onEasterEggClose = null;
-  }
+    cleanupChosenOne();
+    document.getElementById('easter-overlay').style.display = 'none';
+    if (onEasterEggClose) {
+        onEasterEggClose();
+        onEasterEggClose = null;
+    }
 }
+
+// ══════════ MAULISHMASTER — THE CHOSEN ONE ══════════
+let maulishStarAnim = null;
+
+function maulishCreateReverb(ctx, dur = 2.5, decay = 3.5) {
+    const cv = ctx.createConvolver();
+    const len = ctx.sampleRate * dur;
+    const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) {
+        const d = buf.getChannelData(c);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+    cv.buffer = buf; return cv;
+}
+
+function playChosenSound() {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    const reverb = maulishCreateReverb(ctx);
+    const rvg = ctx.createGain(); rvg.gain.value = 0.55;
+    reverb.connect(rvg); rvg.connect(ctx.destination);
+    // 1. Heartbeat thuds
+    [0, 0.55].forEach(t => {
+        const o = ctx.createOscillator(); o.type = 'sine';
+        o.frequency.setValueAtTime(55, now + t); o.frequency.exponentialRampToValueAtTime(28, now + t + 0.3);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, now + t); g.gain.linearRampToValueAtTime(1.3, now + t + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.001, now + t + 0.4);
+        o.connect(g); g.connect(ctx.destination); g.connect(reverb);
+        o.start(now + t); o.stop(now + t + 0.5);
+        const nb = ctx.createBuffer(1, ctx.sampleRate * 0.04, ctx.sampleRate);
+        const nd = nb.getChannelData(0);
+        for (let i = 0; i < nd.length; i++) nd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (nd.length * 0.1));
+        const ns = ctx.createBufferSource(); ns.buffer = nb;
+        const ng = ctx.createGain(); ng.gain.value = 0.5;
+        ns.connect(ng); ng.connect(ctx.destination); ns.start(now + t);
+    });
+    // 2. String swell
+    [65.41, 98.00, 130.81].forEach((freq, i) => {
+        const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq;
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass';
+        f.frequency.setValueAtTime(120, now + 0.3); f.frequency.exponentialRampToValueAtTime(900, now + 1.5);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, now + 0.3); g.gain.linearRampToValueAtTime(0.22 - i * 0.05, now + 1.0);
+        g.gain.setValueAtTime(0.18, now + 2.0); g.gain.exponentialRampToValueAtTime(0.001, now + 4.5);
+        o.connect(f); f.connect(g); g.connect(ctx.destination); g.connect(reverb);
+        o.start(now + 0.3); o.stop(now + 4.5);
+    });
+    // 3. Orchestral hit + sub boom
+    [82.41, 110, 164.81, 220, 329.63, 440].forEach((freq, i) => {
+        const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq;
+        o.detune.value = (Math.random() - 0.5) * 15;
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass';
+        f.frequency.setValueAtTime(200, now + 1.0); f.frequency.exponentialRampToValueAtTime(4000, now + 1.3);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, now + 1.0 + i * 0.008); g.gain.linearRampToValueAtTime(0.3 - i * 0.03, now + 1.06 + i * 0.008);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 3.8);
+        o.connect(f); f.connect(g); g.connect(ctx.destination); g.connect(reverb);
+        o.start(now + 1.0); o.stop(now + 4.0);
+    });
+    const hb = ctx.createOscillator(); hb.type = 'sine';
+    hb.frequency.setValueAtTime(100, now + 1.0); hb.frequency.exponentialRampToValueAtTime(30, now + 1.5);
+    const hbg = ctx.createGain();
+    hbg.gain.setValueAtTime(0, now + 1.0); hbg.gain.linearRampToValueAtTime(1.8, now + 1.04);
+    hbg.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+    hb.connect(hbg); hbg.connect(ctx.destination); hbg.connect(reverb);
+    hb.start(now + 1.0); hb.stop(now + 1.7);
+    // 4. Choir
+    [130.81, 164.81, 196, 261.63, 329.63, 392, 523.25].forEach((freq, i) => {
+        for (let d = 0; d < 3; d++) {
+            const o = ctx.createOscillator(); o.type = 'sawtooth';
+            o.frequency.value = freq; o.detune.value = (d - 1) * 8 + (Math.random() - 0.5) * 4;
+            const f = ctx.createBiquadFilter(); f.type = 'lowpass';
+            f.frequency.setValueAtTime(250, now + 1.1); f.frequency.exponentialRampToValueAtTime(2200, now + 2.2);
+            const g = ctx.createGain(); const t = now + 1.1 + i * 0.06;
+            g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.07, t + 0.2);
+            g.gain.setValueAtTime(0.06, now + 2.5); g.gain.exponentialRampToValueAtTime(0.001, now + 4.8);
+            o.connect(f); f.connect(g); g.connect(ctx.destination); g.connect(reverb);
+            o.start(t); o.stop(now + 5.0);
+        }
+    });
+    // 5. Brass horns
+    [196, 246.94, 293.66, 392, 493.88].forEach((freq, i) => {
+        const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = freq;
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1200; f.Q.value = 2;
+        const g = ctx.createGain(); const t = now + 1.8 + i * 0.05;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.16, t + 0.08);
+        g.gain.setValueAtTime(0.14, now + 2.5); g.gain.exponentialRampToValueAtTime(0.001, now + 4.2);
+        o.connect(f); f.connect(g); g.connect(ctx.destination); g.connect(reverb);
+        o.start(t); o.stop(now + 4.5);
+    });
+    // 6. Ascending reveal
+    [392, 493.88, 587.33, 698.46, 880, 1046.5, 1174.66].forEach((freq, i) => {
+        const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = freq;
+        const g = ctx.createGain(); const t = now + 2.0 + i * 0.09;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.13, t + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+        o.connect(g); g.connect(ctx.destination); g.connect(reverb);
+        o.start(t); o.stop(t + 0.9);
+    });
+    // 7. Cosmic shimmer
+    for (let i = 0; i < 20; i++) {
+        const o = ctx.createOscillator(); o.type = 'sine';
+        o.frequency.value = 1200 + Math.random() * 5000;
+        const g = ctx.createGain(); const t = now + 2.5 + Math.random() * 1.2;
+        g.gain.setValueAtTime(0.09, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+        o.connect(g); g.connect(ctx.destination); g.connect(reverb);
+        o.start(t); o.stop(t + 0.5);
+    }
+    // 8. Power sustain bass
+    [41.20, 55, 82.41, 110, 164.81].forEach((freq, i) => {
+        const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, now + 1.5); g.gain.linearRampToValueAtTime(0.35 - i * 0.05, now + 2.2);
+        g.gain.setValueAtTime(0.3 - i * 0.04, now + 3.0); g.gain.exponentialRampToValueAtTime(0.001, now + 5.5);
+        o.connect(g); g.connect(ctx.destination); g.connect(reverb);
+        o.start(now + 1.5); o.stop(now + 5.5);
+    });
+}
+
+function maulishInitStars() {
+    const canvas = document.getElementById('maulish-star-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    const stars = Array.from({ length: 200 }, () => ({
+        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+        r: Math.random() * 1.8 + 0.3, speed: Math.random() * 0.4 + 0.1, twinkle: Math.random() * Math.PI * 2
+    }));
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        stars.forEach(s => {
+            s.twinkle += 0.03;
+            const alpha = 0.4 + 0.6 * Math.abs(Math.sin(s.twinkle));
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`; ctx.fill();
+            s.y -= s.speed; if (s.y < -2) { s.y = canvas.height + 2; s.x = Math.random() * canvas.width; }
+        });
+        maulishStarAnim = requestAnimationFrame(draw);
+    }
+    draw();
+	window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    });
+}
+
+function maulishSpawnRings() {
+    for (let i = 0; i < 4; i++) {
+        setTimeout(() => {
+            const ring = document.createElement('div');
+            ring.className = 'maulish-energy-ring';
+            ring.style.width = (60 + i * 20) + 'px'; ring.style.height = (60 + i * 20) + 'px';
+            ring.style.border = `3px solid ${i % 2 === 0 ? 'rgba(255,215,0,0.9)' : 'rgba(160,80,255,0.8)'}`;
+            ring.style.animationDuration = (1.1 + i * 0.15) + 's';
+            document.body.appendChild(ring);
+            setTimeout(() => ring.remove(), 1500);
+        }, i * 140);
+    }
+}
+
+function maulishSpawnParticles() {
+    const colors = ['#FFD700', '#9B30FF', '#00BFFF', '#FF69B4', '#fff', '#FFA500'];
+    for (let i = 0; i < 30; i++) {
+        setTimeout(() => {
+            const p = document.createElement('div'); p.className = 'maulish-energy-particle';
+            const size = Math.random() * 10 + 4;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            p.style.cssText = `width:${size}px;height:${size}px;left:${Math.random() * 100}vw;bottom:${Math.random() * 20 + 5}vh;background:${color};box-shadow:0 0 ${size * 2}px ${color};--drift:${(Math.random() - 0.5) * 80}px;animation-duration:${Math.random() * 1.5 + 1}s;animation-delay:${Math.random() * 0.4}s;`;
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 2500);
+        }, i * 60);
+    }
+}
+
+function maulishCosmicConfetti() {
+    const cols = ['#FFD700', '#9B30FF', '#00BFFF', '#FF69B4', '#fff', '#FFA500', '#7FFF00'];
+    confetti({ particleCount: 70, spread: 80, origin: { x: 0.5, y: 0.35 }, colors: cols, startVelocity: 45, gravity: 0.55 });
+    setTimeout(() => {
+        confetti({ particleCount: 50, angle: 60,  spread: 90, origin: { x: 0, y: 0.65 }, colors: cols, startVelocity: 50 });
+        confetti({ particleCount: 50, angle: 120, spread: 90, origin: { x: 1, y: 0.65 }, colors: cols, startVelocity: 50 });
+    }, 300);
+    setTimeout(() => {
+        confetti({ particleCount: 80, spread: 160, origin: { x: 0.5, y: 1 }, colors: cols, startVelocity: 22, gravity: 0.2, scalar: 1.2 });
+    }, 600);
+}
+
+let maulishTwTimer = null;
+function maulishTypewrite(el, text, speed = 30) {
+    if (maulishTwTimer) clearInterval(maulishTwTimer);
+    el.textContent = ''; let i = 0;
+    maulishTwTimer = setInterval(() => { el.textContent += text[i++]; if (i >= text.length) clearInterval(maulishTwTimer); }, speed);
+}
+
+function triggerChosenOne(egg) {
+    const emojiEl = document.getElementById('easter-emoji');
+    const titleEl = document.getElementById('easter-title');
+    const bodyEl  = document.getElementById('easter-body');
+    const overlay = document.getElementById('easter-overlay');
+    const card    = document.getElementById('easter-card');
+
+    // Set content
+    if (egg.img) {
+        emojiEl.innerHTML = `<img src="${egg.img}" alt="" style="width:80px;height:80px;object-fit:contain;image-rendering:pixelated">`;
+    } else {
+        emojiEl.textContent = egg.emoji;
+    }
+    titleEl.textContent = egg.title;
+    bodyEl.textContent  = '';
+
+    // Inject halo + nebula + banner into card (once only)
+    if (!card.querySelector('.maulish-halo-ring')) {
+        const halo   = document.createElement('div'); halo.className   = 'maulish-halo-ring';
+        const nebula = document.createElement('div'); nebula.className = 'maulish-nebula';
+        const banner = document.createElement('div'); banner.className = 'maulish-chosen-banner';
+        banner.textContent = '✦   The Chosen One   ✦';
+        card.prepend(halo);
+        card.prepend(nebula);
+        titleEl.before(banner);
+    }
+
+    // Build cosmic backdrop layers
+    const cosmic      = document.createElement('div');    cosmic.id      = 'maulish-cosmic';
+    const starCanvas  = document.createElement('canvas'); starCanvas.id  = 'maulish-star-canvas';
+    const edgeAura    = document.createElement('div');    edgeAura.id    = 'maulish-edge-aura';
+    const lightPillar = document.createElement('div');    lightPillar.id = 'maulish-light-pillar';
+    document.body.append(cosmic, starCanvas, edgeAura, lightPillar);
+
+    // Sound
+    playChosenSound();
+    vibrate([50, 30, 50, 30, 100]);
+
+    // Phase 1 — cosmic bg fades in
+    cosmic.style.display = 'block';
+    requestAnimationFrame(() => { cosmic.style.opacity = '1'; });
+    setTimeout(() => { starCanvas.style.opacity = '1'; maulishInitStars(); }, 100);
+
+    // Phase 2 — edge aura
+    setTimeout(() => { edgeAura.style.display = 'block'; edgeAura.classList.add('pulse'); }, 300);
+
+    // Phase 3 — two waves of energy rings
+    setTimeout(maulishSpawnRings, 600);
+    setTimeout(maulishSpawnRings, 900);
+
+    // Phase 4 — light pillar rises from below
+    setTimeout(() => {
+        lightPillar.style.display = 'block';
+        requestAnimationFrame(() => { lightPillar.style.height = '55vh'; });
+    }, 700);
+
+    // Phase 5 — show card
+    setTimeout(() => {
+        card.classList.add('maulish-active');
+        overlay.classList.add('maulish-active');
+        overlay.style.display = 'flex';
+    }, 900);
+
+    // Phase 6 — particles
+    setTimeout(maulishSpawnParticles, 1100);
+
+    // Phase 7 — confetti
+    setTimeout(maulishCosmicConfetti, 1300);
+
+    // Phase 8 — typewriter body text
+    setTimeout(() => maulishTypewrite(bodyEl, egg.body), 1500);
+}
+
+function cleanupChosenOne() {
+    ['maulish-cosmic', 'maulish-star-canvas', 'maulish-edge-aura', 'maulish-light-pillar']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.remove(); });
+    if (maulishStarAnim) { cancelAnimationFrame(maulishStarAnim); maulishStarAnim = null; }
+    const card    = document.getElementById('easter-card');
+    const overlay = document.getElementById('easter-overlay');
+    if (card) {
+        card.classList.remove('maulish-active');
+        card.style.opacity = ''; card.style.transform = '';
+        // Remove injected Chosen One elements so they don't bleed into other easter eggs
+        card.querySelectorAll('.maulish-halo-ring, .maulish-nebula, .maulish-chosen-banner')
+            .forEach(el => el.remove());
+    }
+    if (overlay) { overlay.classList.remove('maulish-active'); }
+}
+// ══════════ END CHOSEN ONE ══════════
+
 
 // ── Toast helper (non-blocking) ───────────────────────────────────
 function showToast(message) {
@@ -169,12 +507,12 @@ window.addEventListener('load', ()=>{
     const hint = document.getElementById('swipe-hint');
     if (hint) hint.classList.add('hidden');
   }
-
   setTimeout(checkNightMode, 500);
 });
 
 // ── 2. Night mode ────────────────────────────────────────────────
 function checkNightMode() {
+  if (document.body.classList.contains('night-mode')) return;
   const h = new Date().getHours();
   if (h >= 23 || h < 4) {
     const overlay = document.getElementById('easter-overlay');
@@ -182,7 +520,7 @@ function checkNightMode() {
     playNightChime();
     setTimeout(()=>{
       showEasterEgg('🌙', "Shouldn't you be asleep, Trainer?",
-        "It's late… but a true Pokémon Trainer never rests. Night mode activated. 🌟\n\nTake care of yourself — even Ash sleeps sometimes.");
+        "It's late… but a true Pokémon Trainer never rests. Night mode activated. 🌟\n\nTake care of yourself - even Ash sleeps sometimes.");
 
       document.body.style.background  = '#1a1a2e';
       document.body.style.transition  = 'background 1.5s ease';
@@ -272,17 +610,17 @@ const TRAINER_EGGS = {
                      body:'The Pewter City Gym Leader has arrived. Jelly-filled donuts for everyone!' },
   'maulishmaster': [
     { emoji:'🔍', img:'img/maulishmaster.png',
-      title:'True Trainer Detected!',
-      body:"You didn't just play the game. You went looking for more. That's the kind of trainer energy we love." },
+      title:'Hall of Fame: One Entry',
+      body:"This slot was reserved before the game even launched. Only one name was ever going to go here." },
     { emoji:'🗝️', img:'img/maulishmaster.png',
-      title:'The Pokédex Knows a Secret!',
-      body:"You typed the magic words. The Pokédex has unlocked a secret it doesn't even know about." },
+      title:'Interesting Name Choice',
+      body:"The original owner of that name never lost a round. Just saying. No pressure. Okay, full pressure." },
     { emoji:'🥚', img:'img/maulishmaster.png',
-      title:'Easter Egg Discovered!',
-      body:'You found the easter egg. You typed the magic name. You are now officially the coolest trainer here.' },
+      title:'Legendary Status: Unverified',
+      body:"The name checks out. The legend? That part's still up to you. Don't let the Pokédex down." },
     { emoji:'⚡', img:'img/maulishmaster.png',
-      title:'A Legendary Name…',
-      body:"Only the most legendary trainers carry that name. Let's see if you live up to it." }
+      title:'Prove It.',
+      body:"Anyone can type a legendary name. Not everyone can back it up. You're being watched. Go ahead, prove it." }
   ],
   'thewifey': [
     { emoji:'💛', img:'img/thewifey.png',
@@ -302,7 +640,7 @@ const TRAINER_EGGS = {
       body:"Out of all the trainers in the world, you're the one I choose. Now go catch that high score." },
     { emoji:'🍼', img:'img/thewifey.png',
       title:'Future Pokémon Mom',
-      body:"Soon you'll be raising two things: a baby… and a new generation of Pokémon trainers." }
+      body:"Soon you'll be raising two things: a baby and a new generation of Pokémon trainers." }
   ],
   'helu': [
     { emoji:'🎮', img:'img/helu.png',
@@ -312,8 +650,8 @@ const TRAINER_EGGS = {
       title:'Rival Battle!',
       body:"Warning: childhood Pokémon rivalry detected. Prepare for intense sibling competition." },
     { emoji:'🕹️', img:'img/helu.png',
-      title:'The OG Player 2',
-      body:"From fighting over the GameBoy to battling over Pokémon Emerald - some things never change." },
+      title:'Chaos Black Survivor',
+      body:"You didn’t just play Pokémon you survived the chaos, the glitches, and whatever Chaos Black threw at you." },
 	{ emoji:'⚡', img:'img/helu.png',
       title:'Sibling Rival Activated',
       body:"All childhood Pokémon debates are about to be settled. Once and for all." },
@@ -339,13 +677,13 @@ function checkTrainerNameEgg(name) {
     document.getElementById('btn-hard').classList.add('selected');
     checkReady();
   }
-  if (key === 'maulish' || key === 'maulishmaster') {
+  if (key === 'maulishmaster') {
     const variants = TRAINER_EGGS['maulishmaster'];
     const egg = variants[Math.floor(Math.random() * variants.length)];
     playSecretJingle();
-    setTimeout(() => showEasterEgg(egg.emoji, egg.title, egg.body, egg.img || null), 300);
+    setTimeout(() => triggerChosenOne(egg), 300);
     return true;
-  }
+}
     if (key === 'thewifey' || key === 'sssiddhi') {
     const variants = TRAINER_EGGS['thewifey'];
     const egg = variants[Math.floor(Math.random() * variants.length)];
@@ -469,8 +807,6 @@ function goToWelcome(type) {
   quizType=type; difficulty=null; quizMode='quick';
   document.getElementById('btn-easy').classList.remove('selected');
   document.getElementById('btn-hard').classList.remove('selected');
-  document.getElementById('player-name').value='';
-  document.getElementById('start-btn').disabled=true;
   document.getElementById('start-btn').textContent='Start Quiz!';
   document.getElementById('btn-quick').classList.add('active');
   document.getElementById('btn-full').classList.remove('active');
@@ -486,9 +822,25 @@ function goToWelcome(type) {
   showScreen('welcome-screen');
 }
 function goHome() {
-  playClick(); stopLearnAudio(); stopResultAudio(); stopWhosThatAudio();
+  playClick();
+  stopLearnAudio();
+  stopResultAudio();
+  stopWhosThatAudio();
   clearAutoNext();
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  questions = [];
+  currentQ = 0;
+  correctCount = 0;
+  answeredCount = 0;
   showScreen('landing-screen');
+  const sb = document.getElementById('start-btn');
+  if (sb) {
+    sb.disabled = false;
+    sb.textContent = 'Start Quiz!';
+  }
 }
 
 document.getElementById('player-name').addEventListener('input', checkReady);
@@ -504,8 +856,8 @@ function selectDiff(d) {
   checkReady();
 }
 function checkReady() {
-  const name=document.getElementById('player-name').value.trim();
-  document.getElementById('start-btn').disabled=!(name&&difficulty);
+  const nameOk = document.getElementById('player-name').value.trim().length > 0;
+  document.getElementById('start-btn').disabled = !(difficulty && nameOk);
 }
 
 async function loadPokemonList() {
@@ -575,10 +927,9 @@ function buildEvoOptions(evoQ) {
 async function startGame() {
   getCtx(); stopWhosThatAudio();
   const rawName = document.getElementById('player-name').value.trim();
-  checkTrainerNameEgg(rawName);
-  if (rawName.toLowerCase().replace(/\s+/g,'') === 'missingno') return;
   playClick();
   playerName = rawName;
+  localStorage.setItem('pokemommy_trainer_name', rawName);
   document.getElementById('start-btn').disabled=true;
   document.getElementById('start-btn').textContent='Loading…';
   if(!allPokemon.length) await loadPokemonList();
@@ -595,32 +946,27 @@ async function startGame() {
   await preloadQuestionImages(0, 3);
   renderQuestion();
 
-  // ── Wait for easter egg overlay before starting timer ────────
-  const isTrainerEgg = TRAINER_EGGS[rawName.toLowerCase().replace(/\s+/g,'')] != null;
-  if (isTrainerEgg) {
-    setTimeout(()=>{
-      const overlay = document.getElementById('easter-overlay');
-      if (overlay.style.display === 'flex') {
-        onEasterEggClose = ()=> startTimer();
-      } else {
-        startTimer();
-      }
-    }, 350);
-  } else {
-    startTimer();
-  }
+
+startTimer();
+}
+
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function getTimeString() {
+  const m = Math.floor(elapsedSeconds / 60);
+  const s = elapsedSeconds % 60;
+  return `${m}:${s.toString().padStart(2,'0')}`;
 }
 
 function preloadQuestionImages(startIdx, count) {
   const toLoad = questions.slice(startIdx, startIdx + count);
-  const promises = toLoad.map(q => new Promise(resolve => {
+  toLoad.forEach(q=>{
     const img = new Image();
-    img.onload  = resolve;
-    img.onerror = resolve;
     img.src = gifUrl(q.correct.name);
-  }));
-  const timeout = new Promise(resolve => setTimeout(resolve, 4000));
-  return Promise.race([Promise.all(promises), timeout]);
+  });
 }
 
 async function renderQuestion() {
@@ -649,31 +995,43 @@ async function renderQuestion() {
 }
 
 function renderWhosQuestion(q) {
-  const img=document.getElementById('pokemon-img'), spn=document.getElementById('spinner');
-  document.getElementById('options-grid').innerHTML='';
-  img.style.opacity='0'; spn.style.display='block';
-  img.className=''; img.src='';
+  const img = document.getElementById('pokemon-img'),
+        spn = document.getElementById('spinner');
 
-  img.onload=()=>{ spn.style.display='none'; img.style.opacity='1'; preloadNext(); };
-  img.onerror=()=>{ img.onerror=null; img.src=fallbackUrl(q.correct.id); };
+  document.getElementById('options-grid').innerHTML = '';
 
-  img.onload=()=>{
-    spn.style.display='none';
-    requestAnimationFrame(()=>{        // frame 1: CSS filter is computed
-      requestAnimationFrame(()=>{      // frame 2: CSS filter is painted
-        img.style.opacity='1';         // NOW show — silhouette guaranteed
-      });
-    });
+  img.style.opacity = '0';
+  spn.style.display = 'block';
+
+  // ⭐ CRITICAL: reset FIRST
+  img.classList.remove('silhouette');
+
+  // ⭐ apply silhouette BEFORE src load
+  if (difficulty === 'hard') {
+    img.classList.add('silhouette');
+  }
+
+  img.onload = () => {
+    spn.style.display = 'none';
+    img.style.opacity = '1';
     preloadNext();
   };
-  img.onerror=()=>{ img.onerror=null; img.src=fallbackUrl(q.correct.id); };
-  img.src=gifUrl(q.correct.name);
 
-  q.options.forEach(opt=>{
-    const btn=document.createElement('button');
-    btn.className='opt-btn'; btn.textContent=displayName(opt.name);
-    btn.style.fontFamily="'Flexo', sans-serif";
-    btn.onclick=()=>checkAnswer('whos',opt.name,q.correct.name,btn);
+  img.onerror = () => {
+    img.onerror = null;
+    img.src = fallbackUrl(q.correct.id);
+  };
+
+  img.src = gifUrl(q.correct.name);
+
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = displayName(opt.name);
+    btn.style.fontFamily = "'Flexo', sans-serif";
+    btn.onclick = () =>
+      checkAnswer('whos', opt.name, q.correct.name, btn);
+
     document.getElementById('options-grid').appendChild(btn);
   });
 }
@@ -774,7 +1132,7 @@ function checkAnswer(type,chosen,correct,btn) {
   if(chosen===correct){
     correctCount++; btn.classList.add('correct');
     fb.textContent=`✅ Correct! It's ${displayName(correct)}!`; fb.style.color='#28a745';
-    playCorrect(); burstConfetti();
+    playCorrect();
   } else {
     btn.classList.add('wrong');
     if(type==='whos') document.querySelectorAll('.opt-btn').forEach(b=>{ if(b.textContent===displayName(correct)) b.classList.add('correct'); });
@@ -802,7 +1160,7 @@ function checkEvoAnswer(btn,evoQ,choseNone,chosenName) {
     correctCount++; btn.classList.add('correct');
     const msg=evoQ.answerIsNone?(evoQ.direction==='next'?'It does not evolve!':'It has no pre-evolution!'):`It's ${displayName(evoQ.answer.name)}!`;
     fb.textContent=`✅ Correct! ${msg}`; fb.style.color='#28a745';
-    playCorrect(); burstConfetti();
+    playCorrect();
   } else {
     btn.classList.add('wrong');
     document.querySelectorAll('.evo-opt-btn').forEach(b=>{
@@ -833,13 +1191,13 @@ async function revealHint(level) {
   const card=document.createElement('div'); card.className='hint-card';
   if(level===1){
     const g=currentPokemonData.species.genera.find(g=>g.language.name==='en');
-    card.innerHTML=`<strong>🏷️ Hint 1 — Category</strong>${g?g.genus:'Unknown'}`;
+    card.innerHTML=`<strong>🏷️ Hint 1 - Category</strong>${g?g.genus:'Unknown'}`;
   } else if(level===2){
     const b=currentPokemonData.types.map(t=>`<span class="type-badge t-${t.type.name}">${capitalize(t.type.name)}</span>`).join('');
-    card.innerHTML=`<strong>⚡ Hint 2 — Type</strong>${b}`;
+    card.innerHTML=`<strong>⚡ Hint 2 - Type</strong>${b}`;
   } else {
     const e=currentPokemonData.species.flavor_text_entries.find(e=>e.language.name==='en'&&(e.version.name==='red'||e.version.name==='blue'))||currentPokemonData.species.flavor_text_entries.find(e=>e.language.name==='en');
-    card.innerHTML=`<strong>📖 Hint 3 — Pokédex Entry</strong><span class="entry-text">${e?e.flavor_text.replace(/[\f\n\r]/g,' '):'No entry found.'}</span>`;
+    card.innerHTML=`<strong>📖 Hint 3 - Pokédex Entry</strong><span class="entry-text">${e?e.flavor_text.replace(/[\f\n\r]/g,' '):'No entry found.'}</span>`;
   }
   document.getElementById('hint-cards').appendChild(card);
 }
@@ -1050,14 +1408,13 @@ function nextQuestion() {
   playClick(); clearAutoNext(); currentQ++;
   if(currentQ<questions.length) renderQuestion(); else showResults();
 }
-function confirmReset()  { if(confirm('Reset the quiz? Your progress will be lost.')) restartGame(); }
+function confirmReset()  { if(confirm('Reset the quiz? Your progress will be lost.')) goHome(); }
 function restartGame() {
   playClick(); stopResultAudio(); stopTimer(); clearAutoNext(); difficulty=null;
   document.getElementById('btn-easy').classList.remove('selected');
   document.getElementById('btn-hard').classList.remove('selected');
-  document.getElementById('player-name').value='';
-  document.getElementById('start-btn').disabled=true;
   document.getElementById('start-btn').textContent='Start Quiz!';
+  checkReady();
   showScreen('welcome-screen');
 }
 function showScreen(id) {
@@ -1082,3 +1439,42 @@ function celebrationConfetti(pct) {
     if(++fired>=rounds*2) clearInterval(iv);
   },340);
 }
+
+// ── Enter key support ────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+
+  // Don't fire while user is typing in the name field
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+  // Welcome popup "Let's Go!" button
+  const popup = document.getElementById('welcome-popup');
+  if (popup && popup.style.display === 'flex') {
+    closeWelcomePopup(); return;
+  }
+
+  // Easter egg "Okay" button
+  const easterOverlay = document.getElementById('easter-overlay');
+  if (easterOverlay && easterOverlay.style.display === 'flex') {
+    closeEasterEgg(); return;
+  }
+
+  // "Begin Journey" — check parent screen is actually visible
+  const startBtn = document.getElementById('start-btn');
+  if (startBtn && !startBtn.disabled) {
+    const screen = startBtn.closest('[id$="-screen"]');
+    if (screen && screen.style.display !== 'none') {
+      startBtn.click(); return;
+    }
+  }
+
+  // "Next Question" / "See Results"
+  const nextBtn = document.getElementById('next-btn');
+  if (nextBtn && nextBtn.style.display !== 'none') {
+    const screen = nextBtn.closest('[id$="-screen"]');
+    if (screen && screen.style.display !== 'none') {
+      nextBtn.click(); return;
+    }
+  }
+});
