@@ -81,7 +81,15 @@
     <input id="name-popup-input" type="text" placeholder="Enter your name…" maxlength="20"
       style="width:100%; box-sizing:border-box; padding:12px 14px; border:2px solid #dde3ee; border-radius:10px; font-size:15px; font-family:Flexo,sans-serif; outline:none; color:#003A70; margin-bottom:14px;"
       oninput="checkNamePopupReady()" onkeydown="if(event.key==='Enter')confirmTrainerName()">
-    <button id="name-popup-btn" onclick="confirmTrainerName()" disabled
+    <div style="display:flex;gap:12px;margin-bottom:16px;">
+  <button id="gender-boy" onclick="selectGender('boy')" style="flex:1;padding:12px 8px;border:2px solid #3D7DCA;border-radius:10px;background:#3D7DCA;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Roboto',sans-serif;display:flex;flex-direction:column;align-items:center;gap:4px;">
+    <img src="img/boy_ow.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;">Boy
+  </button>
+  <button id="gender-girl" onclick="selectGender('girl')" style="flex:1;padding:12px 8px;border:2px solid #ddd;border-radius:10px;background:#f9f9f9;color:#666;font-size:13px;font-weight:700;cursor:pointer;font-family:'Roboto',sans-serif;display:flex;flex-direction:column;align-items:center;gap:4px;">
+    <img src="img/girl_ow.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;">Girl
+  </button>
+</div>
+<button id="name-popup-btn" onclick="confirmTrainerName()" disabled
       style="width:100%; background:#FFCB05; color:#003A70; border:none; border-radius:12px; padding:13px; font-size:15px; font-weight:700; cursor:pointer; font-family:Flexo,sans-serif; opacity:0.5;">
       Begin Journey!
     </button>
@@ -182,7 +190,7 @@
   <!-- ══════════ GAME ══════════ -->
   <div id="game-screen" class="screen">
     <div class="top-bar">
-      <span class="trainer">🎮 <span id="player-display"></span></span>
+      <span class="trainer"><img id="trainer-gender-img" src="img/boy_ow.png" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated;vertical-align:middle;"><span id="player-display"></span></span>
       <span style="font-size:12px;">Question <span id="q-num">1</span> / <span id="q-total">20</span></span>
       <span class="timer-display" id="timer-display">0:00</span>
       <button class="reset-btn" onclick="confirmReset()">↩ Reset</button>
