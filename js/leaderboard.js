@@ -1,4 +1,4 @@
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbythw_Uezk8xyKcO-HxIEByGyofTJ4AwkUC2pZLaDjAWBWoQ-ZJMd-qSe5YKwsOLM0/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrQs92eiCFtd2-TJd7iWQH-ZJhaHcLfcmNBf608pqSGLjeZS2YNdxgekOBw5TLt_g/exec';
 
 // ── Timer ────────────────────────────────────────────────────────
 let timerInterval=null, timerSeconds=0;
@@ -75,10 +75,7 @@ accuracy: pct,
 time: getTimeString(),
 difficulty: difficulty.charAt(0).toUpperCase()+difficulty.slice(1),
 mode: quizMode === 'full' ? 'Full Test' : 'Quick Test',
-date:(()=>{
-const now=new Date(), ist=new Date(now.getTime()+(5.5*60*60*1000));
-return `${String(ist.getUTCDate()).padStart(2,'0')}/${String(ist.getUTCMonth()+1).padStart(2,'0')}/${ist.getUTCFullYear()}`;
-})()
+sessionId: sessionId
 };
 try {
 await fetch(APPS_SCRIPT_URL,{
@@ -218,22 +215,36 @@ rowMode === currentMode;
   // ── Normalise accuracy to 0–100 integer ──────────────────────
   // Handles "85%" (string), 0.85 (decimal float), 85 (integer)
   data = data.map(r => {
-    let acc = r.accuracy;
-    if (typeof acc === 'string') {
-      acc = parseFloat(acc.replace('%',''));
-    } else if (typeof acc === 'number' && acc <= 1) {
-      acc = Math.round(acc * 100);
-    } else {
-      acc = Math.round(acc);
-    }
-    return { ...r, _acc: acc };
-  });
+  let acc = r.accuracy;
+  if (typeof acc === 'string') {
+    acc = parseFloat(acc.replace('%',''));
+  } else if (typeof acc === 'number' && acc > 0 && acc <= 1) {
+    acc = Math.round(acc * 100);
+  } else {
+    acc = Math.round(Number(acc));
+  }
+  if (isNaN(acc)) acc = 0;
+  return { ...r, _acc: acc };
+});
 
-  // Sort: accuracy desc, then time asc
-  data.sort((a,b) => {
-    if (b._acc !== a._acc) return b._acc - a._acc;
-    return timeToSeconds(a.time) - timeToSeconds(b.time);
-  });
+  // Keep only each trainer's best attempt
+const bestByName = {};
+data.forEach(r => {
+const key = r.name.trim().toLowerCase();
+const ex = bestByName[key];
+if (!ex ||
+    r._acc > ex._acc ||
+    (r._acc === ex._acc && timeToSeconds(r.time) < timeToSeconds(ex.time))) {
+  bestByName[key] = r;
+}
+});
+data = Object.values(bestByName);
+
+// Sort: accuracy desc, then time asc
+data.sort((a,b) => {
+if (b._acc !== a._acc) return b._acc - a._acc;
+return timeToSeconds(a.time) - timeToSeconds(b.time);
+});
 
   data = data.slice(0, 50);
 
@@ -251,16 +262,19 @@ rowMode === currentMode;
 
   const medals = ['🥇','🥈','🥉'];
   const rows = data.map((r,i) => {
-    const isYou     = r.name === playerName;
-    const rank      = i < 3 ? medals[i] : `#${i+1}`;
-    const rankClass = i < 3 ? `lb-rank lb-rank-${i+1}` : 'lb-rank';
-    return `<tr class="${isYou ? 'lb-you' : ''}">
+const isYou = sessionId
+  ? (String(r.sessionid || '') === sessionId)
+  : (r.name === playerName);
+const rank = i < 3 ? medals[i] : `#${i+1}`;
+const rankClass = i < 3 ? `lb-rank lb-rank-${i+1}` : 'lb-rank';
+const youBadge = isYou ? ' <span style="background:#3D7DCA;color:#fff;font-size:9px;padding:1px 5px;border-radius:99px;font-family:Roboto,sans-serif;vertical-align:middle;">YOU</span>' : '';
+    return `<tr class="${isYou ? 'lb-you' : ''}" ${isYou ? 'id="lb-you-row"' : ''}>
       <td><span class="${rankClass}">${rank}</span></td>
-      <td>${escHtml(r.name)}${isYou ? ' 👈' : ''}</td>
+      <td>${escHtml(r.name)}${youBadge}</td>
       <td>${escHtml(r.score)}</td>
       <td>${r._acc}%</td>
       <td>${escHtml(r.time)}</td>
-      <td>${escHtml(r.date||'—')}</td>
+      <td>${formatDate(r.date)}</td>
     </tr>`;
   }).join('');
 
@@ -274,6 +288,9 @@ rowMode === currentMode;
       </thead>
       <tbody>${rows}</tbody>
     </table>`;
+
+  const youRow = document.getElementById('lb-you-row');
+  if (youRow) setTimeout(() => youRow.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -285,4 +302,15 @@ function timeToSeconds(timeStr) {
 function escHtml(str) {
   if (!str) return '—';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function formatDate(val) {
+  if (!val) return '—';
+  const s = String(val);
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s; // already DD/MM/YYYY
+  const d = new Date(s);
+  if (!isNaN(d)) {
+    const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+    return `${String(ist.getUTCDate()).padStart(2,'0')}/${String(ist.getUTCMonth()+1).padStart(2,'0')}/${ist.getUTCFullYear()}`;
+  }
+  return s;
 }

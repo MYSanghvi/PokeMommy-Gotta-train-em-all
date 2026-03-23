@@ -60,6 +60,7 @@ let autoNextTimer=null;
 let onEasterEggClose = null;
 let elapsedSeconds = 0;
 const QUICK_COUNT=20;
+let sessionId = '';
 
 // ════════════════════════════════════════════════════════════════
 // ── WELCOME POPUP MESSAGE
@@ -941,6 +942,7 @@ function buildEvoOptions(evoQ) {
 }
 
 async function startGame() {
+  sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   getCtx(); stopWhosThatAudio();
   const rawName = document.getElementById('player-name').value.trim();
   playClick();
@@ -955,8 +957,8 @@ async function startGame() {
   currentQ=0; correctCount=0; answeredCount=0;
   document.getElementById('q-total').textContent=questions.length;
   document.getElementById('player-display').textContent=playerName;
-const genderImg = document.getElementById('trainer-gender-img');
-if (genderImg) genderImg.src = playerGender === 'girl' ? 'img/girl_ow.png' : 'img/boy_ow.png';
+  const genderImg = document.getElementById('trainer-gender-img');
+  if (genderImg) genderImg.src = playerGender === 'girl' ? 'img/girl_ow.png' : 'img/boy_ow.png';
   document.getElementById('whos-section').style.display    =quizType==='whos'    ?'block':'none';
   document.getElementById('identify-section').style.display=quizType==='identify'?'block':'none';
   document.getElementById('evo-section').style.display     =quizType==='evo'     ?'block':'none';
@@ -1055,20 +1057,34 @@ function renderWhosQuestion(q) {
 }
 
 function renderIdentifyQuestion(q) {
-  const nameEl=document.getElementById('identify-name');
-  nameEl.textContent=displayName(q.correct.name);
-  nameEl.style.fontFamily="'Flexo', sans-serif";
-  const grid=document.getElementById('img-options-grid'); grid.innerHTML='';
-  q.options.forEach(opt=>{
-    const btn=document.createElement('button');
-    btn.className='img-opt-btn'; btn.dataset.name=opt.name;
-    const spin=document.createElement('div'); spin.className='img-opt-spinner';
-    const img=document.createElement('img'); img.alt=opt.name; img.style.opacity='0';
-    img.onload=()=>{ if(difficulty==='hard') img.classList.add('silhouette'); spin.style.display='none'; img.style.opacity='1'; };
-    img.onerror=()=>{ img.onerror=null; img.src=fallbackUrl(opt.id); };
-    img.src=gifUrl(opt.name);
+  const nameEl = document.getElementById('identify-name');
+  nameEl.textContent = displayName(q.correct.name);
+  nameEl.style.fontFamily = "'Flexo', sans-serif";
+  const grid = document.getElementById('img-options-grid');
+  grid.innerHTML = '';
+
+  let loadedCount = 0;
+  const total = q.options.length;
+
+  function onOneLoaded(img, spin) {
+    if (difficulty === 'hard') img.classList.add('silhouette');
+    spin.style.display = 'none';
+    loadedCount++;
+    if (loadedCount === total) {
+      grid.querySelectorAll('.img-opt-btn img').forEach(i => i.style.opacity = '1');
+    }
+  }
+
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'img-opt-btn'; btn.dataset.name = opt.name;
+    const spin = document.createElement('div'); spin.className = 'img-opt-spinner';
+    const img = document.createElement('img'); img.alt = opt.name; img.style.opacity = '0';
+    img.onload  = () => onOneLoaded(img, spin);
+    img.onerror = () => { img.onerror = null; img.src = fallbackUrl(opt.id); onOneLoaded(img, spin); };
+    img.src = gifUrl(opt.name);
     btn.appendChild(spin); btn.appendChild(img);
-    btn.onclick=()=>checkAnswer('identify',opt.name,q.correct.name,btn);
+    btn.onclick = () => checkAnswer('identify', opt.name, q.correct.name, btn);
     grid.appendChild(btn);
   });
 }
@@ -1093,6 +1109,8 @@ function renderEvoQuestion(evoQ) {
   if(evoQ.direction==='next'){ visualRow.appendChild(subjectWrap); visualRow.appendChild(arrow); visualRow.appendChild(qWrap); }
   else { visualRow.appendChild(qWrap); visualRow.appendChild(arrow); visualRow.appendChild(subjectWrap); }
   const grid=document.getElementById('evo-options-grid'); grid.innerHTML='';
+  const evoTotal = evoQ.options.filter(o => !o.isNone).length;
+let evoLoadedCount = 0;
   evoQ.options.forEach(opt=>{
     const btn=document.createElement('button');
     if(opt.isNone){
@@ -1104,12 +1122,12 @@ function renderEvoQuestion(evoQ) {
       btn.appendChild(icon); btn.appendChild(lbl);
       btn.onclick=()=>checkEvoAnswer(btn,evoQ,true);
     } else {
-      btn.className='evo-opt-btn'; btn.dataset.name=opt.name;
-      const spin=document.createElement('div'); spin.className='evo-opt-spinner';
-      const img2=document.createElement('img'); img2.alt=opt.name; img2.style.opacity='0';
-      img2.onload=()=>{ if(difficulty==='hard') img2.classList.add('silhouette'); spin.style.display='none'; img2.style.opacity='1'; };
-      img2.onerror=()=>{ img2.onerror=null; img2.src=fallbackUrl(opt.id); };
-      img2.src=gifUrl(opt.name);
+btn.className='evo-opt-btn'; btn.dataset.name=opt.name;
+const spin=document.createElement('div'); spin.className='evo-opt-spinner';
+const img2=document.createElement('img'); img2.alt=opt.name; img2.style.opacity='0';
+img2.onload=()=>{ if(difficulty==='hard') img2.classList.add('silhouette'); spin.style.display='none'; evoLoadedCount++; if(evoLoadedCount>=evoTotal) grid.querySelectorAll('.evo-opt-btn img').forEach(i=>i.style.opacity='1'); };
+img2.onerror=()=>{ img2.onerror=null; img2.src=fallbackUrl(opt.id); evoLoadedCount++; if(evoLoadedCount>=evoTotal) grid.querySelectorAll('.evo-opt-btn img').forEach(i=>i.style.opacity='1'); };
+img2.src=gifUrl(opt.name);
       const cap=document.createElement('div'); cap.className='evo-caption';
       cap.style.fontFamily="'Flexo', sans-serif";
       cap.textContent=difficulty==='hard'?'???':displayName(opt.name);
