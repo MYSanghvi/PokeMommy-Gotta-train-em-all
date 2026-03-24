@@ -190,18 +190,24 @@
   <!-- ══════════ GAME ══════════ -->
   <div id="game-screen" class="screen">
     <div class="top-bar">
-      <span class="trainer"><img id="trainer-gender-img" src="img/boy_ow.png" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated;vertical-align:middle;"><span id="player-display"></span></span>
-      <span class="q-counter" style="font-size:12px">Q<span id="q-num">1</span>/<span id="q-total">20</span></span>
-      <span class="timer-display" id="timer-display">0:00</span>
-      <button class="reset-btn" onclick="confirmReset()">↩ Reset</button>
-    </div>
+  <div class="top-left">
+    <img id="trainer-gender-img" src="img/boy_ow.png" style="width:22px;height:22px;object-fit:contain;image-rendering:pixelated;">
+    <span class="trainer" id="player-display"></span>
+  </div>
+  <div class="top-center">
+    <span class="q-counter">Q<span id="q-num">1</span>/<span id="q-total">20</span></span>
+    <span class="acc-inline">Acc <span id="accuracy-display">—</span></span>
+  </div>
+  <div class="top-right">
+    <span class="timer-display" id="timer-display">0m 00s</span>
+    <button class="reset-btn" onclick="confirmReset()">⟳ Reset</button>
+  </div>
+</div>
+
     <div class="progress-wrap">
       <div class="progress-fill" id="progress-fill" style="width:0%"></div>
     </div>
-    <div class="accuracy-badge">
-      <span class="lbl">Accuracy</span>
-      <span class="pct" id="accuracy-display">—</span>
-    </div>
+   
 
     <!-- WHO'S THAT -->
     <div id="whos-section">
