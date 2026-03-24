@@ -111,7 +111,8 @@
   </div>
 </div>
 
-<button class="sound-toggle" id="sound-toggle" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+<button class="gear-toggle" id="gear-toggle" onclick="playClick(); openSettings()" title="Settings">⚙️</button>
+
 
 <div class="card">
 
@@ -119,10 +120,7 @@
   <div id="landing-screen" class="screen">
     <img src="img/pokemommy_logo.png" alt="PokeMommy" class="landing-logo" id="landing-logo"/>
     <p class="landing-subtitle">Gotta train 'em all</p>
-    <div class="gen-selector">
-      <span class="gen-badge gen-active">✅ Generation 1</span>
-      <span class="gen-badge gen-inactive">⬜ Generation 2 (Coming Soon)</span>
-    </div><br>
+    
     <div class="quiz-type-grid">
       <button class="quiz-type-btn" onclick="openLearn()">
         <span class="qt-icon">📖</span>
@@ -321,6 +319,72 @@
 
 </div><!-- /.card -->
 
+<!-- Settings Overlay -->
+<div id="settings-overlay" onclick="handleSettingsOverlayClick(event)">
+  <div class="s-sheet">
+    <div class="s-handle"></div>
+    <div class="s-title">Settings</div>
+
+    <!-- Generation -->
+    <div class="s-label">Generation</div>
+    <div class="s-gen-chips">
+      <div class="s-gen-chip s-mandatory" title="⚠️ You can’t leave the Kanto region just yet!">
+        <div class="s-chip-check">✓</div>Gen I · Kanto</div>
+      <div class="s-gen-chip s-locked"><div class="s-chip-check"></div>Gen II · Johto 🔒</div>
+      <div class="s-gen-chip s-locked"><div class="s-chip-check"></div>Gen III · Hoenn 🔒</div>
+      <div class="s-gen-chip s-locked"><div class="s-chip-check"></div>Gen IV · Sinnoh 🔒</div>
+    </div>
+    <div class="s-gen-note">ℹ️ These regions are still locked. New Pokémon will appear soon!</div>
+
+    <!-- Sound -->
+    <div class="s-label">Sound</div>
+    <div class="s-sound-row">
+      <div class="s-sound-card" id="s-sfx-card">
+        <div class="s-sound-lbl">🔊 Battle SFX <span class="s-sound-val" id="s-sfx-val">70%</span></div>
+        <input type="range" id="s-sfx-slider" min="0" max="100" value="70" style="--pct:70%"
+               oninput="onSettingsSlider('sfx', this.value)">
+      </div>
+      <div class="s-sound-card" id="s-music-card">
+        <div class="s-sound-lbl">🎵 Route Music <span class="s-sound-val" id="s-music-val">50%</span></div>
+        <input type="range" id="s-music-slider" min="0" max="100" value="50" style="--pct:50%"
+               oninput="onSettingsSlider('music', this.value)">
+      </div>
+    </div>
+    <div class="s-duck-row">
+      <label class="s-duck-label" for="s-auto-duck">🎚️ Auto-Duck music during quiz</label>
+      <label class="s-toggle-switch">
+        <input type="checkbox" id="s-auto-duck" checked>
+        <div class="s-toggle-track"></div>
+      </label>
+    </div>
+
+    <!-- Visual Style -->
+    <div class="s-label">Visual Style</div>
+    <div class="s-sprite-grid">
+      <div class="s-sprite-btn" data-style="hd" onclick="this.closest('.s-sprite-grid').querySelectorAll('.s-sprite-btn').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">
+        <span class="s-sprite-icon">✨</span>
+        <span class="s-sprite-name">HD Animated 3D</span>
+        <span class="s-sprite-desc">Crisp, high-res & animated.</span>
+        <span class="s-sprite-tick">✓ Selected</span>
+      </div>
+      <div class="s-sprite-btn selected" data-style="sd" onclick="this.closest('.s-sprite-grid').querySelectorAll('.s-sprite-btn').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">
+        <span class="s-sprite-icon">⚡</span>
+        <span class="s-sprite-name">SD Animated 3D</span>
+        <span class="s-sprite-desc">Animated & balanced.</span>
+        <span class="s-sprite-tick">✓ Selected</span>
+      </div>
+      <div class="s-sprite-btn" data-style="static" onclick="this.closest('.s-sprite-grid').querySelectorAll('.s-sprite-btn').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">
+        <span class="s-sprite-icon">🕹️</span>
+        <span class="s-sprite-name">Static 2D</span>
+        <span class="s-sprite-desc">Retro pixel. Instant load.</span>
+        <span class="s-sprite-tick">✓ Selected</span>
+      </div>
+    </div>
+
+    <button class="s-save-btn" onclick="saveSettings()">Save & Close</button>
+  </div>
+</div>
+
 <footer class="page-footer">
 <!--            ...........                                                                          
               ...:*+-..........                                                    ...............  
@@ -371,8 +435,7 @@
                                                   .....-+*-....                                     
                                                     ..........-->
   
-  <div class="dedication">Made for my wife and our little future Pokémon Trainer she's carrying.</div>
-  <div>Created by MaulishMaster, a fellow Pokémon Trainer.</div>
+  <div class="dedication">Created by MaulishMaster, for my wife and our little future Pokémon Trainer she's carrying.</div>
   <div class="disclaimer">
     Pokémon and all respective names are trademarks and © of Nintendo, Game Freak, and Creatures Inc.<br/>
     This is a non-commercial fan project and is not affiliated with or endorsed by The Pokémon Company.
