@@ -78,7 +78,7 @@ let elapsedSeconds = 0,
 	elapsedTenths = 0;
 const QUICK_COUNT = 20;
 let sessionId = '';
-
+let resultAudio = null;
 
 
 // ════════════════════════════════════════════════════════════════
@@ -137,38 +137,35 @@ function checkNamePopupReady() {
 }
 
 function confirmTrainerName() {
-	const val = document.getElementById('name-popup-input').value.trim();
-	if (!val) return;
+  const val = document.getElementById('name-popup-input').value.trim();
+  if (!val) return;
 
-	if (val.toLowerCase().replace(/\s+/g, '') === 'missingno') {
-		triggerMissingNo();
-		document.getElementById('name-popup-input').value = '';
-		checkNamePopupReady();
-		return;
-	}
+  if (val.toLowerCase().replace(/\s+/g, '') === 'missingno') {
+    triggerMissingNo();
+    document.getElementById('name-popup-input').value = '';
+    checkNamePopupReady();
+    return;
+  }
 
-
-playerName = val;
-document.getElementById('player-name').value = val;
-localStorage.setItem('pokemommy_trainer_name', val);
-document.getElementById('name-popup').style.display = 'none';
-document.body.style.overflow = '';
-playClick();
-initBgm();
-
-	const hadEgg = checkTrainerNameEgg(val);
-	if (hadEgg) {
-		// Night mode fires after the easter egg is closed
-		const prevClose = onEasterEggClose;
-		onEasterEggClose = () => {
-			if (prevClose) prevClose();
-			setTimeout(checkNightMode, 300);
-		};
-	} else {
-		setTimeout(checkNightMode, 300);
-	}
+  playerName = val;
+  document.getElementById('player-name').value = val;
+  localStorage.setItem('pokemommy_trainer_name', val);
+  document.getElementById('name-popup').style.display = 'none';
+  document.body.style.overflow = '';
+  playClick();
+const hadEgg = checkTrainerNameEgg(val);
+if (hadEgg) {
+    const prevClose = onEasterEggClose;
+    onEasterEggClose = () => {
+        if (prevClose) prevClose();
+        initBgm();
+        setTimeout(checkNightMode, 300);
+    }
+} else {
+    initBgm();
+    setTimeout(checkNightMode, 300);
 }
-
+}
 // ── SETTINGS PANEL ───────────────────────────────────────────────
 function openSettings() {
   const ov = document.getElementById('settings-overlay');
@@ -184,6 +181,10 @@ function openSettings() {
   document.getElementById('s-sfx-card').classList.toggle('s-muted',   sfxVolume === 0);
   document.getElementById('s-music-card').classList.toggle('s-muted', musicVolume === 0);
   document.getElementById('s-auto-duck').checked = autoDuck;
+updateDuckRow(Math.round(musicVolume * 100));
+  const duckRow = document.getElementById('s-duck-row');  
+duckRow.style.opacity = musicVolume === 0 ? '0.4' : '1';    
+duckRow.style.pointerEvents = musicVolume === 0 ? 'none' : '';  
   document.querySelectorAll('.s-sprite-btn').forEach(b =>
     b.classList.toggle('selected', b.dataset.style === spriteStyle));
   ov.classList.add('open');
@@ -195,6 +196,15 @@ function closeSettings() {
 
 function handleSettingsOverlayClick(e) {
   if (e.target === document.getElementById('settings-overlay')) closeSettings();
+}
+
+function updateDuckRow(musicVal) {
+  const row = document.querySelector('.s-duck-row');
+  const toggle = document.getElementById('s-auto-duck');
+  const disabled = musicVal === 0;
+  row.style.opacity = disabled ? '0.4' : '';
+  row.style.pointerEvents = disabled ? 'none' : '';
+  toggle.disabled = disabled;
 }
 
 let _sliderHintTimer = null;
@@ -211,6 +221,10 @@ function onSettingsSlider(type, val) {
   } else {
     musicVolume = val / 100;
     applyBgmVolume();
+	updateDuckRow(val);
+    const duckRow = document.getElementById('s-duck-row');
+    duckRow.style.opacity = val === 0 ? '0.4' : '1';
+    duckRow.style.pointerEvents = val === 0 ? 'none' : '';
   }
 }
 
@@ -250,11 +264,10 @@ function showEasterEgg(emoji, title, body, img = null) {
 
 function closeEasterEgg() {
 	cleanupChosenOne();
+	cleanupWifey();
+	cleanupHelu();
 	document.getElementById('easter-overlay').style.display = 'none';
-	if (onEasterEggClose) {
-		onEasterEggClose();
-		onEasterEggClose = null;
-	}
+	if (onEasterEggClose) { onEasterEggClose(); onEasterEggClose = null; }
 }
 
 // ══════════ MAULISHMASTER — THE CHOSEN ONE ══════════
@@ -709,6 +722,274 @@ function cleanupChosenOne() {
 // ══════════ END CHOSEN ONE ══════════
 
 
+// ══════════════════════════════════════
+// WIFEY — THE ETERNAL BLOOM
+// ══════════════════════════════════════
+function playWifeySound() {
+	const ctx = getCtx(), now = ctx.currentTime;
+	const reverb = maulishCreateReverb(ctx, 2.8, 2.2);
+	const rvg = ctx.createGain(); rvg.gain.value = 0.45;
+	reverb.connect(rvg); rvg.connect(ctx.destination);
+	[261.63,329.63,392,493.88].forEach((freq,i) => {
+		const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+		const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 800;
+		const g = ctx.createGain();
+		g.gain.setValueAtTime(0,now); g.gain.linearRampToValueAtTime(0.07-i*.01,now+.4);
+		g.gain.setValueAtTime(0.06,now+2.5); g.gain.exponentialRampToValueAtTime(0.001,now+4.8);
+		o.connect(f); f.connect(g); g.connect(ctx.destination); g.connect(reverb);
+		o.start(now); o.stop(now+5);
+	});
+	[523.25,659.25,783.99,987.77,1046.5,1318.51].forEach((freq,i) => {
+		const t = now+.35+i*.22, o = ctx.createOscillator(); o.type='sine'; o.frequency.value=freq;
+		const g = ctx.createGain();
+		g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.18,t+.025); g.gain.exponentialRampToValueAtTime(.001,t+.85);
+		o.connect(g); g.connect(ctx.destination); g.connect(reverb); o.start(t); o.stop(t+.9);
+	});
+	[523.25,659.25,783.99,987.77,1046.5,1318.51].forEach((freq,i) => {
+		const t = now+1.5+i*.2, o = ctx.createOscillator(); o.type='sine'; o.frequency.value=freq*.5;
+		const g = ctx.createGain();
+		g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.1,t+.03); g.gain.exponentialRampToValueAtTime(.001,t+1.0);
+		o.connect(g); g.connect(ctx.destination); g.connect(reverb); o.start(t); o.stop(t+1.1);
+	});
+	for (let i=0;i<14;i++) {
+		const o=ctx.createOscillator(); o.type='triangle'; o.frequency.value=1600+Math.random()*2200;
+		const g=ctx.createGain(), t=now+.8+Math.random()*2.0;
+		g.gain.setValueAtTime(.07,t); g.gain.exponentialRampToValueAtTime(.001,t+.35);
+		o.connect(g); g.connect(ctx.destination); g.connect(reverb); o.start(t); o.stop(t+.4);
+	}
+	[0,.6].forEach(t => {
+		const o=ctx.createOscillator(); o.type='sine';
+		o.frequency.setValueAtTime(80,now+t); o.frequency.exponentialRampToValueAtTime(45,now+t+.25);
+		const g=ctx.createGain();
+		g.gain.setValueAtTime(0,now+t); g.gain.linearRampToValueAtTime(.28,now+t+.04); g.gain.exponentialRampToValueAtTime(.001,now+t+.5);
+		o.connect(g); g.connect(ctx.destination); o.start(now+t); o.stop(now+t+.6);
+	});
+}
+
+let wifeyStarAnim = null;
+
+function wifeyInitCanvas(cv) {
+	const ctx = cv.getContext('2d');
+	cv.width = innerWidth; cv.height = innerHeight;
+	const pts = Array.from({length:55}, () => ({
+		x:Math.random()*cv.width, y:cv.height*.3+Math.random()*cv.height*.7,
+		sz:Math.random()*13+7, vy:Math.random()*.55+.18, vx:(Math.random()-.5)*.35,
+		wb:Math.random()*Math.PI*2, op:Math.random()*.55+.3,
+		type:Math.random()>.38?'h':'s', hue:330+Math.random()*28,
+	}));
+	function drawHeart(ctx,cx,cy,s,op,hue) {
+		ctx.save(); ctx.globalAlpha=op; ctx.fillStyle=`hsl(${hue},78%,72%)`;
+		ctx.beginPath();
+		ctx.moveTo(cx,cy+s*.28);
+		ctx.bezierCurveTo(cx,cy-s*.05,cx-s*.5,cy-s*.05,cx-s*.5,cy+s*.28);
+		ctx.bezierCurveTo(cx-s*.5,cy+s*.62,cx,cy+s*.88,cx,cy+s);
+		ctx.bezierCurveTo(cx,cy+s*.88,cx+s*.5,cy+s*.62,cx+s*.5,cy+s*.28);
+		ctx.bezierCurveTo(cx+s*.5,cy-s*.05,cx,cy-s*.05,cx,cy+s*.28);
+		ctx.fill(); ctx.restore();
+	}
+	function frame() {
+		ctx.clearRect(0,0,cv.width,cv.height);
+		pts.forEach(p => {
+			p.wb+=.022; p.y-=p.vy; p.x+=p.vx+Math.sin(p.wb)*.3;
+			const f=p.y/cv.height, a=p.op*Math.min(1,f*2.5)*Math.max(0,1-(1-f)*3);
+			if (p.type==='h') drawHeart(ctx,p.x,p.y,p.sz,a,p.hue);
+			else { ctx.save(); ctx.globalAlpha=a; ctx.font=`${p.sz+4}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=`rgba(255,220,235,${a})`; ctx.fillText('✦',p.x,p.y); ctx.restore(); }
+			if (p.y<-20) { p.y=cv.height+20; p.x=Math.random()*cv.width; p.wb=Math.random()*Math.PI*2; }
+		});
+		wifeyStarAnim = requestAnimationFrame(frame);
+	}
+	frame();
+}
+
+function wifeySpawnRings() {
+	for (let i=0;i<4;i++) setTimeout(() => {
+		const r=document.createElement('div'); r.className='wifey-ring';
+		const s=62+i*24;
+		r.style.cssText=`width:${s}px;height:${s}px;border:3px solid ${i%2===0?'rgba(255,145,180,.88)':'rgba(255,215,0,.65)'};animation-duration:${1.2+i*.14}s;`;
+		document.body.appendChild(r); setTimeout(()=>r.remove(),1600);
+	}, i*125);
+}
+
+function wifeySpawnPetals() {
+	const em=['💕','✨','💫','🌸','💖','⭐','🌺','💗','🌷','🫧'];
+	for (let i=0;i<30;i++) setTimeout(() => {
+		const p=document.createElement('div'); p.className='wifey-petal';
+		p.textContent=em[Math.floor(Math.random()*em.length)];
+		p.style.cssText=`left:${Math.random()*100}vw;bottom:${Math.random()*18+4}vh;font-size:${Math.random()*14+14}px;--drift:${(Math.random()-.5)*100}px;--spin:${(Math.random()-.5)*200}deg;animation-duration:${Math.random()*1.4+1.2}s;animation-delay:${Math.random()*.25}s;`;
+		document.body.appendChild(p); setTimeout(()=>p.remove(),3000);
+	}, i*52);
+}
+
+function triggerWifey(egg) {
+	const emojiEl = document.getElementById('easter-emoji');
+	const titleEl = document.getElementById('easter-title');
+	const bodyEl  = document.getElementById('easter-body');
+	const overlay = document.getElementById('easter-overlay');
+	const card    = document.getElementById('easter-card');
+	if (egg.img) {
+		emojiEl.innerHTML = `<img src="${egg.img}" alt="" style="width:80px;height:80px;object-fit:contain;image-rendering:pixelated;">`;
+	} else {
+		emojiEl.innerHTML = egg.emoji;
+	}
+	titleEl.textContent = egg.title;
+	bodyEl.textContent  = egg.body;
+	vibrate(50,30,50,30,100);
+	if (!card.querySelector('.wifey-halo')) {
+		const halo=document.createElement('div'); halo.className='wifey-halo';
+		const neb=document.createElement('div');  neb.className='wifey-nebula';
+		const ban=document.createElement('span'); ban.className='wifey-banner'; ban.textContent='✦ MOST IMPORTANT TRAINER ✦';
+		card.prepend(halo); card.prepend(neb); titleEl.before(ban);
+	}
+	const cosmic=document.createElement('div');    cosmic.id='wifey-cosmic';
+	const starCv=document.createElement('canvas'); starCv.id='wifey-star-canvas';
+	const edge=document.createElement('div');      edge.id='wifey-edge';
+	const pillar=document.createElement('div');    pillar.id='wifey-pillar';
+	document.body.append(cosmic,starCv,edge,pillar);
+	overlay.classList.add('wifey-active');
+	card.classList.add('wifey-active');
+	overlay.style.display = 'flex';
+	cosmic.style.display='block'; requestAnimationFrame(()=>cosmic.style.opacity='1');
+	setTimeout(()=>{starCv.style.opacity='1'; wifeyInitCanvas(starCv);},100);
+	setTimeout(()=>{edge.style.display='block'; edge.classList.add('pulse');},280);
+	setTimeout(()=>wifeySpawnRings(),550);
+	setTimeout(()=>wifeySpawnRings(),820);
+	setTimeout(()=>{pillar.style.display='block'; requestAnimationFrame(()=>pillar.style.height='58vh');},650);
+	setTimeout(()=>wifeySpawnPetals(),1100);
+}
+
+function cleanupWifey() {
+	['wifey-cosmic','wifey-star-canvas','wifey-edge','wifey-pillar'].forEach(id=>{const el=document.getElementById(id); if(el)el.remove();});
+	if (wifeyStarAnim) { cancelAnimationFrame(wifeyStarAnim); wifeyStarAnim=null; }
+	const card=document.getElementById('easter-card');
+	const overlay=document.getElementById('easter-overlay');
+	if (card) { card.classList.remove('wifey-active'); card.querySelectorAll('.wifey-halo,.wifey-nebula,.wifey-banner').forEach(el=>el.remove()); }
+	if (overlay) overlay.classList.remove('wifey-active');
+	document.querySelectorAll('.wifey-ring,.wifey-petal').forEach(e=>e.remove());
+}
+
+// ══════════════════════════════════════
+// HELU — GAMEBOY
+// ══════════════════════════════════════
+function playHeluSound() {
+	const ctx=getCtx(), now=ctx.currentTime;
+	const reverb=maulishCreateReverb(ctx,1.0,4.0);
+	const rvg=ctx.createGain(); rvg.gain.value=0.3;
+	reverb.connect(rvg); rvg.connect(ctx.destination);
+	[[392,0],[523.25,.12],[659.25,.24],[783.99,.36],[880,.52],[783.99,.65],[880,.78],[1046.5,.92]].forEach(([freq,t])=>{
+		const o=ctx.createOscillator(); o.type='square'; o.frequency.value=freq;
+		const f=ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=2200;
+		const g=ctx.createGain();
+		g.gain.setValueAtTime(.14,now+t); g.gain.setValueAtTime(.12,now+t+.09); g.gain.exponentialRampToValueAtTime(.001,now+t+.16);
+		o.connect(f); f.connect(g); g.connect(ctx.destination); g.connect(reverb); o.start(now+t); o.stop(now+t+.18);
+	});
+	[0,.52].forEach(t=>{
+		const o=ctx.createOscillator(); o.type='square'; o.frequency.value=98;
+		const g=ctx.createGain();
+		g.gain.setValueAtTime(.35,now+t); g.gain.exponentialRampToValueAtTime(.001,now+t+.18);
+		o.connect(g); g.connect(ctx.destination); o.start(now+t); o.stop(now+t+.2);
+	});
+	[.24,.78].forEach(t=>{
+		const buf=ctx.createBuffer(1,ctx.sampleRate*.08,ctx.sampleRate);
+		const d=buf.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+		const ns=ctx.createBufferSource(); ns.buffer=buf;
+		const g=ctx.createGain();
+		g.gain.setValueAtTime(.2,now+t); g.gain.exponentialRampToValueAtTime(.001,now+t+.08);
+		ns.connect(g); g.connect(ctx.destination); ns.start(now+t); ns.stop(now+t+.09);
+	});
+}
+
+let heluPixelAnim = null;
+
+function heluInitCanvas(cv) {
+	const ctx = cv.getContext('2d');
+	cv.width = innerWidth; cv.height = innerHeight;
+	const GB = ['#9BBB0F','#8BAC0F','#306230','#0F380F','#6a9a0f'];
+	const pts = Array.from({length:130}, () => ({
+		x: Math.random() * cv.width,
+		y: Math.random() * cv.height,
+		sz: (Math.floor(Math.random() * 3) + 1) * 4,
+		vy: Math.random() * 1.3 + .35,
+		vx: (Math.random() - .5) * .28,
+		col: GB[Math.floor(Math.random() * GB.length)],
+		op: Math.random() * .65 + .2,
+	}));
+	function frame() {
+		ctx.clearRect(0, 0, cv.width, cv.height);
+		pts.forEach(p => {
+			p.y += p.vy; p.x += p.vx;
+			ctx.globalAlpha = p.op;
+			ctx.fillStyle = p.col;
+			ctx.fillRect(Math.floor(p.x/p.sz)*p.sz, Math.floor(p.y/p.sz)*p.sz, p.sz-1, p.sz-1);
+			if (p.y > cv.height + 10) { p.y = -p.sz; p.x = Math.random() * cv.width; }
+		});
+		heluPixelAnim = requestAnimationFrame(frame);
+	}
+	frame();
+}
+
+function heluSpawnRings() {
+	for (let i=0;i<4;i++) setTimeout(()=>{
+		const r=document.createElement('div'); r.className='helu-ring';
+		const s=60+i*22;
+		r.style.cssText=`width:${s}px;height:${s}px;border:3px solid ${i%2===0?'rgba(155,187,15,.9)':'rgba(48,98,48,.7)'};animation-duration:${.95+i*.11}s;`;
+		document.body.appendChild(r); setTimeout(()=>r.remove(),1200);
+	},i*95);
+}
+
+function heluSpawnGlitchLines() {
+	const cols=['rgba(155,187,15,.35)','rgba(139,172,15,.28)','rgba(48,98,48,.4)'];
+	for (let i=0;i<5;i++) setTimeout(()=>{
+		const l=document.createElement('div'); l.className='helu-glitch-line';
+		l.style.cssText=`background:${cols[i%3]};height:${Math.random()*3+1}px;animation-duration:${Math.random()*.7+.45}s;`;
+		document.body.appendChild(l); setTimeout(()=>l.remove(),1100);
+	},i*140);
+}
+
+function triggerHelu(egg) {
+	const emojiEl=document.getElementById('easter-emoji');
+	const titleEl=document.getElementById('easter-title');
+	const bodyEl =document.getElementById('easter-body');
+	const overlay=document.getElementById('easter-overlay');
+	const card   =document.getElementById('easter-card');
+	if (egg.img) {
+		emojiEl.innerHTML=`<img src="${egg.img}" alt="" style="width:80px;height:80px;object-fit:contain;image-rendering:pixelated;">`;
+	} else {
+		emojiEl.innerHTML=egg.emoji;
+	}
+	titleEl.textContent=egg.title;
+	bodyEl.textContent =egg.body;
+	vibrate(50,30,50,30,100);
+	if (!card.querySelector('.helu-halo')) {
+		const halo=document.createElement('div'); halo.className='helu-halo';
+		const noise=document.createElement('div'); noise.className='helu-noise';
+		const ban=document.createElement('span'); ban.className='helu-banner'; ban.textContent='>> PLAYER 2 HAS JOINED <<';
+		card.prepend(halo); card.prepend(noise); titleEl.before(ban);
+	}
+		const pixelCv=document.createElement('canvas'); pixelCv.id='helu-pixel-canvas';
+	const edge  =document.createElement('div'); edge.id='helu-edge';
+	const pillar=document.createElement('div'); pillar.id='helu-pillar';
+	document.body.append(pixelCv,edge,pillar);
+	setTimeout(()=>{ pixelCv.style.opacity='1'; heluInitCanvas(pixelCv); }, 80);
+	overlay.classList.add('helu-active');
+	card.classList.add('helu-active');
+	overlay.style.display='flex';
+	setTimeout(()=>{edge.style.display='block'; edge.classList.add('pulse');},240);
+	setTimeout(()=>{heluSpawnRings(); heluSpawnGlitchLines();},500);
+	setTimeout(()=>{heluSpawnRings(); heluSpawnGlitchLines();},750);
+	setTimeout(()=>{pillar.style.display='block'; requestAnimationFrame(()=>pillar.style.height='52vh');},580);
+}
+
+function cleanupHelu() {
+	['helu-pixel-canvas','helu-edge','helu-pillar'].forEach(id=>{const el=document.getElementById(id); if(el)el.remove();});
+	if (heluPixelAnim) { cancelAnimationFrame(heluPixelAnim); heluPixelAnim=null; }
+	const card=document.getElementById('easter-card');
+	const overlay=document.getElementById('easter-overlay');
+	if (card) { card.classList.remove('helu-active'); card.querySelectorAll('.helu-halo,.helu-noise,.helu-banner').forEach(el=>el.remove()); }
+	if (overlay) overlay.classList.remove('helu-active');
+	document.querySelectorAll('.helu-ring,.helu-glitch-line').forEach(e=>e.remove());
+}
+
+
 // ── Toast helper (non-blocking) ───────────────────────────────────
 function showToast(message) {
 	const existing = document.getElementById('easter-toast');
@@ -764,7 +1045,7 @@ window.addEventListener('load', () => {
 				playSecretJingle();
 				celebrationConfetti(100);
 				showEasterEgg('🏆', 'ACHIEVEMENT UNLOCKED: Obsessive Tapper',
-					"This whole game was made for people who notice the small things. You're one of them!");
+					"🌟 Incredible! You’ve unlocked a secret meant only for the most observant Trainers!");
 			}
 		});
 	}
@@ -999,7 +1280,7 @@ const TRAINER_EGGS = {
 			emoji: '🎮',
 			img: 'img/helu.png',
 			title: 'Player 2 Has Joined!',
-			body: "Before the quiz, before the code, there was you, a GameBoy SP, and way too many arguments about who got to play Pokémon Emerald 💚"
+			body: "From epic GameBoy SP battles to Pokémon Emerald marathons, the ultimate Trainer has arrived!"
 		},
 		{
 			emoji: '🎮',
@@ -1065,15 +1346,15 @@ function checkTrainerNameEgg(name) {
 	if (key === 'thewifey' || key === 'sssiddhi') {
 		const variants = TRAINER_EGGS['thewifey'];
 		const egg = variants[Math.floor(Math.random() * variants.length)];
-		playSecretJingle();
-		setTimeout(() => showEasterEgg(egg.emoji, egg.title, egg.body, egg.img || null), 300);
+		playWifeySound();
+		setTimeout(() => triggerWifey(egg), 300);
 		return true;
 	}
 	if (key === 'helu' || key === 'preeyanshee') {
 		const variants = TRAINER_EGGS['helu'];
 		const egg = variants[Math.floor(Math.random() * variants.length)];
-		playSecretJingle();
-		setTimeout(() => showEasterEgg(egg.emoji, egg.title, egg.body, egg.img || null), 300);
+		playHeluSound();
+		setTimeout(() => triggerHelu(egg), 300);
 		return true;
 	}
 	if (TRAINER_EGGS[key]) {
@@ -1160,7 +1441,7 @@ function attachLongPress(imgEl, pokemonId) {
 function playLearnCry(pokemonId) {
 	if (!soundOn) return;
 	const cry = new Audio(`https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${pokemonId}.ogg`);
-	cry.volume = 0.5;
+	cry.volume = 0.5 * sfxVolume;
 	cry.play().catch(() => {});
 }
 
@@ -1896,6 +2177,7 @@ async function openLearnDetail(pokemonId, fromBrowse = true) {
 		const btn = document.getElementById('learn-speaker-btn');
 		btn.classList.add('playing');
 		learnAudio = new Audio(`sounds/eng_${String(pokemonId).padStart(3,'0')}.mp3`);
+		learnAudio.volume = sfxVolume;
 		learnAudio.play().catch(() => btn.classList.remove('playing'));
 		learnAudio.onended = () => btn.classList.remove('playing');
 	}
@@ -1919,6 +2201,7 @@ function playLearnAudio() {
 	btn.classList.add('playing');
 	const capturedId = learnCurrentId;
 	learnAudio = new Audio(`sounds/eng_${String(capturedId).padStart(3,'0')}.mp3`);
+	learnAudio.volume = sfxVolume;
 	learnAudio.play().catch(() => {
 		learnAudio = new Audio(`https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${capturedId}.ogg`);
 		learnAudio.play().catch(() => btn.classList.remove('playing'));
@@ -1928,6 +2211,7 @@ function playLearnAudio() {
 	learnAudio.onended = () => {
 		if (learnCurrentId !== capturedId) return;
 		learnAudio = new Audio(`https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${capturedId}.ogg`);
+		learnAudio.volume = sfxVolume;
 		learnAudio.play().catch(() => {});
 		learnAudio.onended = () => btn.classList.remove('playing');
 	};

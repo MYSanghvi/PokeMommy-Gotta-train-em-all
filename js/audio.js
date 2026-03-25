@@ -10,7 +10,7 @@ let sfxVolume   = parseFloat(localStorage.getItem('pm_sfx_vol')  ?? '0.7');
 let musicVolume = parseFloat(localStorage.getItem('pm_music_vol') ?? '0.5');
 let spriteStyle = localStorage.getItem('pm_sprite_style') || 'sd';
 let autoDuck    = localStorage.getItem('pm_auto_duck') !== 'false';
-let bgmAudio    = null;
+let bgmAudio = null;
 
 function initBgm() {
   if (bgmAudio) return;
@@ -24,7 +24,7 @@ function applyBgmVolume() {
   bgmAudio.volume = soundOn ? musicVolume : 0;
 }
 function duckBgm() {
-  if (!bgmAudio || !autoDuck) return;
+  if (!bgmAudio || !autoDuck || musicVolume === 0) return;  // ← add musicVolume === 0
   bgmAudio.volume = soundOn ? musicVolume * 0.2 : 0;
 }
 function unduckBgm() { applyBgmVolume(); }
@@ -40,7 +40,7 @@ function getCtx() {
 }
 function tone(freq, type, dur, vol=0.28, delay=0) {
   if (!soundOn) return;
-   const scaledVol = vol * sfxVolume; 
+  const scaledVol = vol * sfxVolume;
   try {
     const ctx = getCtx();
     // ── Resume if suspended before scheduling any nodes ─────────
@@ -49,7 +49,7 @@ function tone(freq, type, dur, vol=0.28, delay=0) {
     osc.connect(gain); gain.connect(ctx.destination);
     osc.type=type;
     osc.frequency.setValueAtTime(freq, ctx.currentTime+delay);
-    gain.gain.setValueAtTime(vol, ctx.currentTime+delay);
+    gain.gain.setValueAtTime(scaledVol, ctx.currentTime+delay);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+dur);
     osc.start(ctx.currentTime+delay); osc.stop(ctx.currentTime+delay+dur);
   } catch(e) {}

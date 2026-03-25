@@ -22,11 +22,6 @@ function getTimeString() {
   return `${m}m ${String(s).padStart(2,'0')}.${t}s`;
 }
 
-// ── Result Audio ─────────────────────────────────────────────────
-let resultAudio=null;
-function stopResultAudio() {
-  if(resultAudio){ resultAudio.pause(); resultAudio.currentTime=0; resultAudio=null; }
-}
 
 // ── Show Results ─────────────────────────────────────────────────
 function showResults() {

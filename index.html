@@ -42,8 +42,7 @@
       </p>
       <p style="margin:0; font-size:13px; color:#555; line-height:1.6;">
         Some trainer names unlock <em>special surprises</em>. 
-        Try names like <strong>Ash</strong>, <strong>Brock</strong>, or 
-        maybe something a little more… legendary.</p>
+        Try names like <strong>Ash</strong>, <strong>Brock</strong>, or maybe your own legendary alias…</p>
     </div>
 
     <div style="background:#fffbf0; border:1px dashed #FFCB05; border-radius:12px;
@@ -322,7 +321,6 @@
 <!-- Settings Overlay -->
 <div id="settings-overlay" onclick="handleSettingsOverlayClick(event)">
   <div class="s-sheet">
-    <div class="s-handle"></div>
     <div class="s-title">Settings</div>
 
     <!-- Generation -->
@@ -330,9 +328,9 @@
     <div class="s-gen-chips">
       <div class="s-gen-chip s-mandatory" title="⚠️ You can’t leave the Kanto region just yet!">
         <div class="s-chip-check">✓</div>Gen I · Kanto</div>
-      <div class="s-gen-chip s-locked"><div class="s-chip-check"></div>Gen II · Johto 🔒</div>
-      <div class="s-gen-chip s-locked"><div class="s-chip-check"></div>Gen III · Hoenn 🔒</div>
-      <div class="s-gen-chip s-locked"><div class="s-chip-check"></div>Gen IV · Sinnoh 🔒</div>
+      <div class="s-gen-chip s-locked"><div class="s-chip-check"></div>🔒 Gen II · Johto<div>
+      <div class="s-gen-chip s-locked"><div class="s-chip-check"></div>🔒 Gen III · Hoenn</div>
+      <div class="s-gen-chip s-locked"><div class="s-chip-check"></div>🔒 Gen IV · Sinnoh</div>
     </div>
     <div class="s-gen-note">ℹ️ These regions are still locked. New Pokémon will appear soon!</div>
 
@@ -351,7 +349,7 @@
       </div>
     </div>
     <div class="s-duck-row">
-      <label class="s-duck-label" for="s-auto-duck">🎚️ Auto-Duck music during quiz</label>
+      <label class="s-duck-label" id="s-duck-row" for="s-auto-duck">Auto-dim background music during quiz</label>
       <label class="s-toggle-switch">
         <input type="checkbox" id="s-auto-duck" checked>
         <div class="s-toggle-track"></div>
@@ -364,19 +362,19 @@
       <div class="s-sprite-btn" data-style="hd" onclick="this.closest('.s-sprite-grid').querySelectorAll('.s-sprite-btn').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">
         <span class="s-sprite-icon">✨</span>
         <span class="s-sprite-name">HD Animated 3D</span>
-        <span class="s-sprite-desc">Crisp, high-res & animated.</span>
+        <span class="s-sprite-desc">Lively high-def Pokémon animations</span>
         <span class="s-sprite-tick">✓ Selected</span>
       </div>
       <div class="s-sprite-btn selected" data-style="sd" onclick="this.closest('.s-sprite-grid').querySelectorAll('.s-sprite-btn').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">
         <span class="s-sprite-icon">⚡</span>
         <span class="s-sprite-name">SD Animated 3D</span>
-        <span class="s-sprite-desc">Animated & balanced.</span>
+        <span class="s-sprite-desc">Smooth standard Pokémon animations</span>
         <span class="s-sprite-tick">✓ Selected</span>
       </div>
       <div class="s-sprite-btn" data-style="static" onclick="this.closest('.s-sprite-grid').querySelectorAll('.s-sprite-btn').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">
         <span class="s-sprite-icon">🕹️</span>
         <span class="s-sprite-name">Static 2D</span>
-        <span class="s-sprite-desc">Retro pixel. Instant load.</span>
+        <span class="s-sprite-desc">Classic Pokémon art</span>
         <span class="s-sprite-tick">✓ Selected</span>
       </div>
     </div>
@@ -386,7 +384,7 @@
 </div>
 
 <footer class="page-footer">
-<!--            ...........                                                                          
+<!--            z...........                                                                          
               ...:*+-..........                                                    ...............  
               ...*@@@@@@@%+:........                                       .........................
               ...-@@@@@@@@@@@@@+:.......                             ...........:=*%@@@@@@@@@@@@:...
