@@ -1001,7 +1001,7 @@ function showToast(message) {
 		'position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px);' +
 		'background:rgba(0,58,112,0.92); color:#fff; padding:12px 22px;' +
 		'border-radius:12px; font-size:13px; font-family:sans-serif;' +
-		'z-index:9997; opacity:0; transition:opacity 0.3s ease, transform 0.3s ease;' +
+		'z-index:10002; opacity:0; transition:opacity 0.3s ease, transform 0.3s ease;' +
 		'max-width:300px; text-align:center; line-height:1.5; pointer-events:none;'
 	);
 	document.body.appendChild(toast);
@@ -1017,6 +1017,20 @@ function showToast(message) {
 		setTimeout(() => toast.remove(), 400);
 	}, 4000);
 }
+
+// Gen chip toast handlers
+document.querySelectorAll('.s-gen-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    if (chip.classList.contains('s-mandatory')) {
+      showToast("You can't leave the Kanto region just yet!");
+    } else if (chip.classList.contains('s-locked')) {
+      showToast("This region is still locked. New Pokémon will appear soon!");
+    }
+  });
+});
+
+
+// ── Toast helper Ends ───────────────────────────────────
 
 // ── 1. Logo tap milestones ────────────────────────────────────────
 let logoTapCount = 0,
@@ -2376,7 +2390,29 @@ function nextQuestion() {
 }
 
 function confirmReset() {
-	if (confirm('Reset the quiz? Your progress will be lost.')) goHome();
+  if (confirm('Restart from Question 1? Your progress will be lost.')) {
+    playClick();
+    stopTimer();
+    clearAutoNext();
+    currentQ = 0; correctCount = 0; answeredCount = 0;
+    hintsRevealed = 0;
+    startGame();
+  }
+}
+
+function confirmGoHome() {
+  if (confirm('Your progress will be lost. Are you sure you want to start the quiz again?')) {
+    playClick();
+    stopTimer();
+    clearAutoNext();
+    currentQ = 0; correctCount = 0; answeredCount = 0;
+    difficulty = null;
+    document.getElementById('btn-easy').classList.remove('selected');
+    document.getElementById('btn-hard').classList.remove('selected');
+    document.getElementById('start-btn').disabled = true;
+    checkReady();
+    showScreen('welcome-screen');
+  }
 }
 
 function restartGame() {

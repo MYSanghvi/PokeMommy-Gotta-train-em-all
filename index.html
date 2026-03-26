@@ -188,9 +188,10 @@
   <div id="game-screen" class="screen">
     <div class="top-bar">
   <div class="top-left">
-    <img id="trainer-gender-img" src="img/boy_ow.png" style="width:22px;height:22px;object-fit:contain;image-rendering:pixelated;">
-    <span class="trainer" id="player-display"></span>
-  </div>
+  <button class="topbar-back-btn" onclick="confirmGoHome()" title="Back to menu">&#8592;</button>
+  <img id="trainer-gender-img" src="img/boyow.png" style="width:22px;height:22px;object-fit:contain;image-rendering:pixelated">
+  <span class="trainer" id="player-display"></span>
+</div>
   <div class="top-center">
     <span class="q-counter">Q<span id="q-num">1</span>/<span id="q-total">20</span></span>
     <span class="acc-inline">Acc <span id="accuracy-display">—</span></span>
@@ -326,12 +327,19 @@
     <!-- Generation -->
     <div class="s-label">Generation</div>
     <div class="s-gen-chips">
-      <div class="s-gen-chip s-mandatory" title="⚠️ You can’t leave the Kanto region just yet!">
-        <div class="s-chip-check">✓</div>Gen I · Kanto</div>
-      <div class="s-gen-chip s-locked"><div class="s-chip-check"></div>🔒 Gen II · Johto</div>
-      <div class="s-gen-chip s-locked"><div class="s-chip-check"></div>🔒 Gen III · Hoenn</div>
-      <div class="s-gen-chip s-locked"><div class="s-chip-check"></div>🔒 Gen IV · Sinnoh</div>
-    </div>
+  <div class="s-gen-chip s-mandatory" onclick="showToast('You can\'t leave the Kanto region just yet!')">
+    <div class="s-chip-check">&#10003;</div>Gen I · Kanto
+  </div>
+  <div class="s-gen-chip s-locked" onclick="showToast('This region is still locked. New Pokémon will appear soon!')">
+    <div class="s-chip-check"></div> Gen II · Johto
+  </div>
+  <div class="s-gen-chip s-locked" onclick="showToast('This region is still locked. New Pokémon will appear soon!')">
+    <div class="s-chip-check"></div> Gen III · Hoenn
+  </div>
+  <div class="s-gen-chip s-locked" onclick="showToast('This region is still locked. New Pokémon will appear soon!')">
+    <div class="s-chip-check"></div> Gen IV · Sinnoh
+  </div>
+</div>
     <div class="s-gen-note">ℹ️ These regions are still locked. New Pokémon will appear soon!</div>
 
     <!-- Sound -->
