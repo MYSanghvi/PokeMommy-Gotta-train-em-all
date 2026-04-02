@@ -1051,4 +1051,66 @@ color: #003A70; margin-bottom: 10px; line-height: 1.2; font-weight: 700;
   opacity:0; transition:opacity 0.8s ease;
 }
 
+/* ── QUIZ SECTION DIVIDER ─────────────────────────────────────── */
+.quiz-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 2px;
+  color: #ccc;
+  font-size: 10px;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.quiz-section-divider::before,
+.quiz-section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #ebebeb;
+}
+
+/* ── COMING SOON CARD ─────────────────────────────────────────── */
+.quiz-type-btn--coming-soon {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  filter: grayscale(0.5);
+  pointer-events: auto; /* keeps the title tooltip working */
+}
+.quiz-type-btn--coming-soon:hover {
+  border-color: #ddd !important;
+  background: #f9f9f9 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.quiz-type-btn--coming-soon .qt-arrow {
+  color: #ddd !important;
+}
+.qt-coming-soon-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 700;
+  background: #f0f0f0;
+  color: #aaa;
+  border: 1px solid #ddd;
+  border-radius: 99px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  vertical-align: middle;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+body.night-mode .quiz-section-divider { color: #444; }
+body.night-mode .quiz-section-divider::before,
+body.night-mode .quiz-section-divider::after { background: #2a3a5a; }
+body.night-mode .qt-coming-soon-badge {
+  background: #1e2d4a;
+  color: #556a8a;
+  border-color: #2e4a7a;
+}
+
 /* ══════════ END HELU ══════════ */

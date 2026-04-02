@@ -258,32 +258,27 @@ return timeToSeconds(a.time) - timeToSeconds(b.time);
 
   const medals = ['🥇','🥈','🥉'];
   const rows = data.map((r,i) => {
-const isYou = sessionId
-  ? (String(r.sessionid || '') === sessionId)
-  : (r.name === playerName);
+const isYou = String(r.sessionid) === sessionId
+  || String(r.name).trim().toLowerCase() === String(playerName).trim().toLowerCase();
 const rank = i < 3 ? medals[i] : `#${i+1}`;
 const rankClass = i < 3 ? `lb-rank lb-rank-${i+1}` : 'lb-rank';
 const youBadge = isYou ? ' <span style="background:#3D7DCA;color:#fff;font-size:9px;padding:1px 5px;border-radius:99px;font-family:Roboto,sans-serif;vertical-align:middle;">YOU</span>' : '';
     return `<tr class="${isYou ? 'lb-you' : ''}" ${isYou ? 'id="lb-you-row"' : ''}>
-      <td><span class="${rankClass}">${rank}</span></td>
-      <td>${escHtml(r.name)}${youBadge}</td>
-      <td>${escHtml(r.score)}</td>
-      <td>${r._acc}%</td>
-      <td>${escHtml(r.time)}</td>
-      <td>${formatDate(r.date)}</td>
-    </tr>`;
+  <td><span class="${rankClass}">${rank}</span></td>
+  <td>${escHtml(r.name)}${youBadge}</td>
+  <td>${r._acc}%</td>
+  <td>${escHtml(r.time)}</td>
+  <td>${formatDate(r.date)}</td>
+</tr>`;
   }).join('');
 
-  wrap.innerHTML = `
-    <table class="lb-table">
-      <thead>
-        <tr>
-          <th>RANK</th><th>NAME</th><th>SCORE</th>
-          <th>ACCURACY</th><th>TIME</th><th>DATE</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>`;
+  wrap.innerHTML = `<table class="lb-table">
+  <thead><tr>
+    <th>RANK</th><th>NAME</th>
+    <th>ACCURACY</th><th>TIME</th><th>DATE</th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+</table>`;
 
   const youRow = document.getElementById('lb-you-row');
   if (youRow) setTimeout(() => youRow.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);

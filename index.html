@@ -125,7 +125,7 @@
         <span class="qt-icon"><img class="qt-svg-img" src="img/pokedex.svg"></span>
         <span class="qt-text">
           <span class="qt-title">Pokédex</span>
-          <span class="qt-desc">Browse every Pokémon. View types,<br/>Pokédex entries &amp; evolution chains.</span>
+          <span class="qt-desc">Browse every Pokémon, explore types, Pokédex entries, and evolution chains.</span>
         </span>
         <span class="qt-arrow">›</span>
       </button>
@@ -133,7 +133,7 @@
         <span class="qt-icon"><img class="qt-svg-img" src="img/identify.svg"></span>
         <span class="qt-text">
           <span class="qt-title">Identify the Pokémon</span>
-          <span class="qt-desc">A Pokémon name is shown.<br/>Choose the correct image from 4 options.</span>
+          <span class="qt-desc">A Pokémon name appears; pick the correct image from four options given.</span>
         </span>
         <span class="qt-arrow">›</span>
       </button>
@@ -141,7 +141,7 @@
         <span class="qt-icon"><img class="qt-svg-img" src="img/evolution.svg"></span>
         <span class="qt-text">
           <span class="qt-title">Spot the Evolution</span>
-          <span class="qt-desc">A Pokémon is shown. Choose its evolution<br/>or pre-evolution from 4 image options.</span>
+          <span class="qt-desc">A Pokémon is shown; choose its evolution or pre-evolution from options.</span>
         </span>
         <span class="qt-arrow">›</span>
       </button>
@@ -149,10 +149,31 @@
         <span class="qt-icon"><img class="qt-svg-img" src="img/who_pokemon.svg"></span>
         <span class="qt-text">
           <span class="qt-title">Who's That Pokémon?</span>
-          <span class="qt-desc">A Pokémon is shown.<br/>Pick the correct name from 4 options.</span>
+          <span class="qt-desc">A Pokémon appears; select the correct name from the four given options.</span>
         </span>
         <span class="qt-arrow">›</span>
       </button>
+	  
+	  <!-- ── Coming Soon Divider ─────────────────────────────────── -->
+<div class="quiz-section-divider">
+  <span>The Road Ahead</span>
+</div>
+
+<!-- ── Gym Battles (Coming Soon) ──────────────────────────── -->
+<button class="quiz-type-btn quiz-type-btn--coming-soon" disabled title="Gym Battles — Coming Soon!">
+  <span class="qt-icon"><img class="qt-svg-img" src="img/gym_trainer.svg"></span>
+  <span class="qt-text">
+    <span class="qt-title">
+      Gym Battles
+      <span class="qt-coming-soon-badge">Coming Soon</span>
+    </span>
+    <span class="qt-desc">
+      Earn badges by mastering Pokémon and their unique types and specialties.
+    </span>
+  </span>
+  <span class="qt-arrow" style="color:#ddd;">›</span>
+</button>
+	  
     </div>
   </div>
 
@@ -375,14 +396,14 @@
       </div>
       <div class="s-sprite-btn selected" data-style="sd" onclick="this.closest('.s-sprite-grid').querySelectorAll('.s-sprite-btn').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">
         <span class="s-sprite-icon">⚡</span>
-        <span class="s-sprite-name">SD Animated 3D</span>
-        <span class="s-sprite-desc">Smooth standard Pokémon animations</span>
+        <span class="s-sprite-name">SD Animated 3D</span> 
+        <span class="s-sprite-desc">Smooth standard Pokémon animations</span> <!-- From Pokemon Sun and Moon Gen 7-->
         <span class="s-sprite-tick">✓ Selected</span>
       </div>
       <div class="s-sprite-btn" data-style="static" onclick="this.closest('.s-sprite-grid').querySelectorAll('.s-sprite-btn').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">
         <span class="s-sprite-icon">🕹️</span>
         <span class="s-sprite-name">Static 2D</span>
-        <span class="s-sprite-desc">Classic Pokémon art</span>
+        <span class="s-sprite-desc">Classic Pokémon art</span> <!-- From Pokemon Official Art -->
         <span class="s-sprite-tick">✓ Selected</span>
       </div>
     </div>

@@ -51,9 +51,18 @@ const SPRITE_MAP = {
 const FALLBACK_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/';
 // function gifUrl(name)    { return GIF_BASE+(SPRITE_MAP[name]||capitalize(name))+'.gif'; } HD GIF source
 function gifUrl(name) {
-  if (spriteStyle === 'hd')     return 'img/spriteshd/'     + name + '.gif';
-  if (spriteStyle === 'static') return 'img/spritesstatic/' + name + '.png';
-  return 'img/sprites/' + name + '.gif';
+  // ── Ash's Pikachu: swap sprite when trainer is Ash ───────────────
+  const _ashAliases = { 'ashketchum': 'ash' };
+  const _trainerKey = playerName.toLowerCase().replace(/\s+/g, '');
+  const _resolvedTrainer = _ashAliases[_trainerKey] ?? _trainerKey;
+  const spriteName = (name === 'pikachu' && _resolvedTrainer === 'ash')
+    ? 'pikachu-ash'
+    : name;
+  // ────────────────────────────────────────────────────────────────
+
+  if (spriteStyle === 'hd') return 'img/spriteshd/' + spriteName + '.gif';
+  if (spriteStyle === 'static') return 'img/spritesstatic/' + spriteName + '.png';
+  return 'img/sprites/' + spriteName + '.gif';
 }
 
 function fallbackUrl(id) {
@@ -1375,45 +1384,47 @@ const TRAINER_EGGS = {
 };
 
 function checkTrainerNameEgg(name) {
-	const key = name.toLowerCase().replace(/\s+/g, '');
-	if (key === 'missingno') {
-		triggerMissingNo();
-		return true;
-	}
-	if (key === 'gary') {
-		difficulty = 'hard';
-		document.getElementById('btn-easy').classList.remove('selected');
-		document.getElementById('btn-hard').classList.add('selected');
-		checkReady();
-	}
-	if (key === 'maulishmaster') {
-		const variants = TRAINER_EGGS['maulishmaster'];
-		const egg = variants[Math.floor(Math.random() * variants.length)];
-		playSecretJingle();
-		setTimeout(() => triggerChosenOne(egg), 300);
-		return true;
-	}
-	if (key === 'thewifey' || key === 'sssiddhi') {
-		const variants = TRAINER_EGGS['thewifey'];
-		const egg = variants[Math.floor(Math.random() * variants.length)];
-		playWifeySound();
-		setTimeout(() => triggerWifey(egg), 300);
-		return true;
-	}
-	if (key === 'helu' || key === 'preeyanshee') {
-		const variants = TRAINER_EGGS['helu'];
-		const egg = variants[Math.floor(Math.random() * variants.length)];
-		playHeluSound();
-		setTimeout(() => triggerHelu(egg), 300);
-		return true;
-	}
-	if (TRAINER_EGGS[key]) {
-		const egg = TRAINER_EGGS[key];
-		playSecretJingle();
-		setTimeout(() => showEasterEgg(egg.emoji, egg.title, egg.body, egg.img || null), 300);
-		return true;
-	}
-	return false;
+  const key = name.toLowerCase().replace(/\s+/g, '');
+
+  // ── Alias map: alternate names → canonical egg key ──────────────
+  const ALIASES = {
+    'ashketchum':       'ash',
+    'garyoak':          'gary',
+    'mistywaterflower': 'misty',
+    'brockslater':      'brock',
+  };
+  const resolvedKey = ALIASES[key] ?? key;
+
+  if (resolvedKey === 'missingno') { triggerMissingNo(); return true; }
+  if (resolvedKey === 'gary') { difficulty = 'hard'; document.getElementById('btn-easy').classList.remove('selected'); document.getElementById('btn-hard').classList.add('selected'); checkReady(); }
+  if (resolvedKey === 'maulishmaster') {
+    const variants = TRAINER_EGGS['maulishmaster'];
+    const egg = variants[Math.floor(Math.random() * variants.length)];
+    playSecretJingle();
+    setTimeout(() => triggerChosenOne(egg), 300);
+    return true;
+  }
+  if (resolvedKey === 'thewifey' || resolvedKey === 'sssiddhi') {
+    const variants = TRAINER_EGGS['thewifey'];
+    const egg = variants[Math.floor(Math.random() * variants.length)];
+    playWifeySound();
+    setTimeout(() => triggerWifey(egg), 300);
+    return true;
+  }
+  if (resolvedKey === 'helu' || resolvedKey === 'preeyanshee') {
+    const variants = TRAINER_EGGS['helu'];
+    const egg = variants[Math.floor(Math.random() * variants.length)];
+    playHeluSound();
+    setTimeout(() => triggerHelu(egg), 300);
+    return true;
+  }
+  if (TRAINER_EGGS[resolvedKey]) {
+    const egg = TRAINER_EGGS[resolvedKey];
+    playSecretJingle();
+    setTimeout(() => showEasterEgg(egg.emoji, egg.title, egg.body, egg.img || null), 300);
+    return true;
+  }
+  return false;
 }
 
 // ── 4. MissingNo glitch ──────────────────────────────────────────
