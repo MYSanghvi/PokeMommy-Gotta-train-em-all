@@ -140,7 +140,10 @@ function confirmTrainerName() {
   const val = document.getElementById('name-popup-input').value.trim();
   if (!val) return;
 
-  if (val.toLowerCase().replace(/\s+/g, '') === 'missingno') {
+      if (val.toLowerCase().replace(/\s+/g, '') === 'missingno') {
+    document.getElementById('name-popup').style.display = 'none';
+    document.body.style.overflow = '';
+    onEasterEggClose = () => { showNamePopup(); };
     triggerMissingNo();
     document.getElementById('name-popup-input').value = '';
     checkNamePopupReady();
@@ -606,6 +609,19 @@ function maulishTypewrite(el, text, speed = 30) {
 }
 
 function triggerChosenOne(egg) {
+	// Block all interaction for the entire Chosen One sequence
+	const chosenBlocker = document.createElement('div');
+	chosenBlocker.id = 'chosen-one-blocker';
+	chosenBlocker.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:all;';
+	document.body.appendChild(chosenBlocker);
+
+	const prevClose = onEasterEggClose;
+	onEasterEggClose = () => {
+		const b = document.getElementById('chosen-one-blocker');
+		if (b) b.remove();
+		if (prevClose) prevClose();
+	};
+
 	const emojiEl = document.getElementById('easter-emoji');
 	const titleEl = document.getElementById('easter-title');
 	const bodyEl = document.getElementById('easter-body');
@@ -1075,7 +1091,13 @@ function checkNightMode() {
   if (document.body.classList.contains('night-mode')) return;
   const h = new Date().getHours();
   if (h >= 23 || h < 4) {
+	// ── Block all interaction for the entire night-mode sequence ──
+    const nightBlocker = document.createElement('div');
+    nightBlocker.id = 'night-mode-blocker';
+    nightBlocker.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:all;';
+    document.body.appendChild(nightBlocker);
 
+    
     // ── Step 1: Play the chime immediately ────────────────────
     playNightChime();
 
@@ -1134,7 +1156,14 @@ input[type="text"]::placeholder { color: #556a8a !important; }
 .progress-wrap { background: #2e4a7a !important; }
 .gen-badge { background: #1e2d4a !important; border-color: #2e4a7a !important; color: #aab4c8 !important; }
 .gen-badge.gen-active { background: #2a3f6a !important; border-color: #7eb3f7 !important; color: #7eb3f7 !important; }
+.question-label { color: #e0e0e0 !important; }
+.q-counter, .q-counter * { color: #7eb3f7 !important; }
+.learn-section-label { color: #e8e8e8 !important; }
+#learn-browse-screen h1 { color: #7eb3f7 !important; -webkit-text-stroke: 0 !important; }
+.top-row-2 .trainer { color: #7eb3f7 !important; }
+.top-row-2 .acc-inline, .top-row-2 .timer-display { color: #7eb3f7 !important; }
 `;
+
         document.head.appendChild(style);
       }
       document.body.classList.add('night-mode');
@@ -1163,9 +1192,16 @@ input[type="text"]::placeholder { color: #556a8a !important; }
       }
     }, 1000);
 
-    // ── Step 5: Show the easter egg AFTER the transition is felt ──
+        // ── Step 5: Show the easter egg AFTER the transition is felt ──
     // Player has had ~2.6s to watch the screen darken before the overlay appears
     setTimeout(() => {
+            const prevClose = onEasterEggClose;
+      onEasterEggClose = () => {
+        const b = document.getElementById('night-mode-blocker');
+        if (b) b.remove();
+        if (prevClose) prevClose();
+      };
+
       showEasterEgg('🌙', "Shouldn't you be asleep, Trainer?",
         "It's late… but a true Pokémon Trainer never rests. \n\nTake care of yourself - even Ash sleeps sometimes.");
     }, 1600);
@@ -1383,20 +1419,184 @@ function checkTrainerNameEgg(name) {
 // ── 4. MissingNo glitch ──────────────────────────────────────────
 function triggerMissingNo() {
 	playGlitchSound();
-	vibrate([100, 50, 200, 50, 100]);
+	vibrate([100, 50, 200, 50, 100, 50, 200, 50, 300]);
+
+	// Block interaction during glitch
+	const blocker = document.createElement('div');
+	blocker.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:all;';
+	document.body.appendChild(blocker);
+
+	// Inject keyframe animations
+	if (!document.getElementById('missingno-style')) {
+		const s = document.createElement('style');
+		s.id = 'missingno-style';
+		s.textContent = `
+			@keyframes mnShake {
+				0%,100%{transform:translate(0,0) skewX(0deg)}
+				10%{transform:translate(-10px,4px) skewX(-3deg)}
+				20%{transform:translate(10px,-4px) skewX(3deg)}
+				30%{transform:translate(-6px,8px) skewX(-2deg)}
+				40%{transform:translate(12px,-3px) skewX(4deg)}
+				50%{transform:translate(-4px,10px) skewX(-3deg)}
+				60%{transform:translate(8px,-8px) skewX(2deg)}
+				70%{transform:translate(-12px,3px) skewX(-4deg)}
+				80%{transform:translate(5px,9px) skewX(3deg)}
+				90%{transform:translate(-8px,-5px) skewX(-2deg)}
+			}
+			@keyframes mnChroma {
+				0%,100%{text-shadow:3px 0 #00ffff,-3px 0 #ff00ff,0 0 20px #ff0000}
+				25%{text-shadow:-5px 0 #ff0000,5px 0 #0000ff,0 0 30px #ff0000}
+				50%{text-shadow:4px 0 #00ff00,-4px 0 #ff0000,0 0 25px #ffff00}
+				75%{text-shadow:-3px 0 #ffff00,3px 0 #ff00ff,0 0 20px #00ffff}
+			}
+			@keyframes mnScan {
+				0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)}
+			}
+			@keyframes mnBlink {
+				0%,49%{opacity:1} 50%,100%{opacity:0}
+			}
+		`;
+		document.head.appendChild(s);
+	}
+
 	const card = document.querySelector('.card');
-	card.style.transition = 'filter 0.1s';
-	let flickers = 0;
-	const glitch = setInterval(() => {
-		card.style.filter = flickers % 2 === 0 ? 'invert(1) hue-rotate(180deg)' : 'none';
-		flickers++;
-		if (flickers > 10) {
-			clearInterval(glitch);
-			card.style.filter = 'none';
-			showEasterEgg('👾', 'E̷R̵R̴O̸R̷: M̸I̷S̶S̴I̵N̷G̸N̵O̴.',
-				'A wild MissingNo. appeared and corrupted the quiz data!. 😅\n\nThat Trainer Name can’t be registered. Please choose a different one!');
+	const body = document.body;
+	const origBg = body.style.background;
+
+	// ── Overlay layers ──────────────────────────────────────
+
+	// 1. Red flash vignette
+	const redFlash = document.createElement('div');
+	redFlash.style.cssText = 'position:fixed;inset:0;z-index:9993;pointer-events:none;background:rgba(255,0,0,0);transition:background 0.05s;';
+	body.appendChild(redFlash);
+
+	// 2. Scanlines
+	const scanlines = document.createElement('div');
+	scanlines.style.cssText = 'position:fixed;inset:0;z-index:9994;pointer-events:none;opacity:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.18) 0px,rgba(0,0,0,0.18) 1px,transparent 1px,transparent 4px);transition:opacity 0.2s;';
+	body.appendChild(scanlines);
+
+	// 3. Scrolling scan beam
+	const beam = document.createElement('div');
+	beam.style.cssText = 'position:fixed;left:0;right:0;top:0;height:3px;z-index:9995;pointer-events:none;background:rgba(0,255,180,0.7);box-shadow:0 0 18px 6px rgba(0,255,180,0.5);opacity:0;';
+	body.appendChild(beam);
+
+	// 4. Noise canvas (small, scaled up for performance)
+	const nc = document.createElement('canvas');
+	nc.width = 120; nc.height = 200;
+	nc.style.cssText = 'position:fixed;inset:0;z-index:9996;pointer-events:none;opacity:0;width:100%;height:100%;image-rendering:pixelated;transition:opacity 0.1s;';
+	body.appendChild(nc);
+	const nctx = nc.getContext('2d');
+
+	// 5. Warning text
+	const warn = document.createElement('div');
+	warn.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9997;pointer-events:none;font-family:monospace;font-size:clamp(12px,3.5vw,20px);font-weight:900;color:#ff0000;text-align:center;letter-spacing:3px;opacity:0;line-height:1.8;';
+	warn.innerHTML = '⚠ D̷A̸T̴A̷ &nbsp;C̶O̷R̸R̵U̷P̴T̵E̸D̷ ⚠<br><span style="font-size:0.7em;color:#ff4444;">M̵I̷S̶S̴I̷N̵G̶N̷O̸.&nbsp;D̷E̸T̷E̸C̸T̵E̸D̷</span>';
+	body.appendChild(warn);
+
+	function drawNoise(intensity) {
+		const d = nctx.createImageData(nc.width, nc.height);
+		for (let i = 0; i < d.data.length; i += 4) {
+			if (Math.random() < intensity) {
+				d.data[i]   = Math.random() * 255;
+				d.data[i+1] = Math.random() < 0.3 ? 255 : 0;
+				d.data[i+2] = Math.random() * 255;
+				d.data[i+3] = 220;
+			}
 		}
-	}, 120);
+		nctx.putImageData(d, 0, 0);
+	}
+
+	const FILTERS = [
+		'invert(1) hue-rotate(180deg)',
+		'invert(1) hue-rotate(90deg) saturate(8)',
+		'invert(0.9) hue-rotate(270deg) brightness(2.5)',
+		'saturate(12) hue-rotate(120deg) contrast(2)',
+		'invert(1) brightness(4) contrast(0.4)',
+		'hue-rotate(240deg) saturate(10) brightness(1.8)',
+		'invert(0.6) sepia(1) hue-rotate(180deg) saturate(8)',
+		'brightness(0.1) invert(1)',
+		'contrast(5) saturate(0)',
+	];
+
+	const BG_COLORS = ['#ff0000','#00ff00','#0000ff','#ff00ff','#00ffff','#ffff00','#1a1a2e','#FFCB05'];
+	let tick = 0;
+	const TOTAL = 22;
+
+	const glitch = setInterval(() => {
+		tick++;
+
+		// Cycle dramatic filters
+		card.style.filter = FILTERS[tick % FILTERS.length];
+
+		// Red vignette flash
+		redFlash.style.background = `rgba(255,0,0,${(Math.random() * 0.55).toFixed(2)})`;
+
+		// Body BG corruption
+		body.style.background = BG_COLORS[tick % BG_COLORS.length];
+
+		// Scanlines ramp up
+		scanlines.style.opacity = Math.min(tick / TOTAL * 0.9, 0.85).toString();
+
+		// Scan beam fires from tick 5
+		if (tick === 5) {
+			beam.style.opacity = '1';
+			beam.style.animation = 'mnScan 0.4s linear infinite';
+		}
+
+		// Card shake starts tick 7
+		if (tick === 7) {
+			card.style.animation = 'mnShake 0.12s infinite';
+		}
+
+		// Warning text appears tick 9
+		if (tick === 9) {
+			warn.style.opacity = '1';
+			warn.style.animation = 'mnChroma 0.1s infinite, mnBlink 0.25s infinite';
+		}
+
+		// Noise builds from tick 13
+		if (tick > 13) {
+			const intensity = 0.08 + (tick - 13) * 0.06;
+			nc.style.opacity = Math.min((tick - 13) * 0.12, 0.7).toString();
+			drawNoise(intensity);
+		}
+
+		// Extra vibration bursts
+		if (tick % 5 === 0) vibrate([80, 30, 120, 30, 80]);
+
+		// ── PEAK: white flash ──
+		if (tick === TOTAL) {
+			clearInterval(glitch);
+			card.style.filter = 'brightness(15) invert(1)';
+			card.style.animation = 'none';
+			nc.style.opacity = '0.9';
+			drawNoise(0.9);
+			body.style.background = '#ffffff';
+			warn.style.opacity = '0';
+			vibrate([200, 50, 200, 50, 400]);
+
+			// ── Fade out then reveal easter egg ──
+			setTimeout(() => {
+				body.style.transition = 'background 0.3s';
+				body.style.background = origBg || '#FFCB05';
+				card.style.transition = 'filter 0.3s';
+				card.style.filter = 'none';
+				nc.style.opacity = '0';
+				redFlash.style.background = 'rgba(0,0,0,0)';
+				scanlines.style.opacity = '0';
+				beam.style.opacity = '0';
+
+				setTimeout(() => {
+					body.style.transition = '';
+					card.style.transition = '';
+					[redFlash, scanlines, beam, nc, warn].forEach(el => el.remove());
+					blocker.remove();
+					showEasterEgg('👾', 'E̷R̵R̴O̸R̷: M̸I̷S̶S̴I̵N̷G̸N̵O̴.',
+						"A wild MissingNo. appeared and corrupted the quiz data! 😅\n\nThat Trainer Name can't be registered. Please choose a different one!");
+				}, 350);
+			}, 180);
+		}
+	}, 95);
 }
 
 // ── 5. 100% Mew easter egg ───────────────────────────────────────
@@ -2509,7 +2709,7 @@ function celebrationConfetti(pct) {
 // ── Enter key support ────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
-    if (e.key === ' ') e.preventDefault();
+    if (e.key === ' ' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
 
 	// Don't fire while user is typing in the name field
 	const tag = document.activeElement?.tagName;

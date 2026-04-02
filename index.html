@@ -187,18 +187,18 @@
   <!-- ══════════ GAME ══════════ -->
   <div id="game-screen" class="screen">
     <div class="top-bar">
-  <div class="top-left">
-  <button class="topbar-back-btn" onclick="confirmGoHome()" title="Back to menu">&#8592;</button>
-  <img id="trainer-gender-img" src="img/boyow.png" style="width:22px;height:22px;object-fit:contain;image-rendering:pixelated">
-  <span class="trainer" id="player-display"></span>
-</div>
-  <div class="top-center">
+  <div class="top-row-1">
+    <button class="topbar-back-btn" onclick="confirmGoHome()" title="Back to menu">&#8592; Back</button>
+    <button class="reset-btn" onclick="confirmReset()">&#8635; Reset</button>
+  </div>
+  <div class="top-row-2">
+    <div class="top-trainer">
+      <img id="trainer-gender-img" src="img/boyow.png" style="width:22px;height:22px;object-fit:contain;image-rendering:pixelated">
+      <span class="trainer" id="player-display"></span>
+    </div>
     <span class="q-counter">Q<span id="q-num">1</span>/<span id="q-total">20</span></span>
     <span class="acc-inline">Acc <span id="accuracy-display">—</span></span>
-  </div>
-  <div class="top-right">
     <span class="timer-display" id="timer-display">0m 00s</span>
-    <button class="reset-btn" onclick="confirmReset()">⟳ Reset</button>
   </div>
 </div>
 

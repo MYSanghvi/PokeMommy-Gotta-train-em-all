@@ -124,9 +124,6 @@ function stopWhosThatAudio() {
 }
 function toggleSound() {
   soundOn = !soundOn;
-  const btn = document.getElementById('sound-toggle');
-  btn.textContent = soundOn ? '🔊' : '🔇';
-  btn.classList.toggle('muted', !soundOn);
   if (soundOn) getCtx();
   else { stopLearnAudio(); stopResultAudio(); stopWhosThatAudio(); }
   applyBgmVolume();

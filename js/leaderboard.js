@@ -226,14 +226,14 @@ rowMode === currentMode;
 });
 
   // Keep only each trainer's best attempt
-const bestByName = {};
-data.forEach(r => {
-const key = String(r.name || '').trim().toLowerCase();
-const ex = bestByName[key];
-if (key && (!ex || r.acc > ex.acc || (r.acc === ex.acc && timeToSeconds(r.time) < timeToSeconds(ex.time)))) {
-  bestByName[key] = r;
-}
-});
+  const bestByName = {};
+  data.forEach(r => {
+    const key = String(r.name || '').trim().toLowerCase();
+    const ex = bestByName[key];
+    if (key && (!ex || r._acc > ex._acc || (r._acc === ex._acc && timeToSeconds(r.time) < timeToSeconds(ex.time)))) {
+      bestByName[key] = r;
+    }
+  });
 data = Object.values(bestByName);
 
 // Sort: accuracy desc, then time asc
