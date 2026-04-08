@@ -573,8 +573,8 @@ color: #003A70; margin-bottom: 10px; line-height: 1.2; font-weight: 700;
   font-size: 11px; line-height: 1.9; padding: 0 4px 24px; font-family: 'Roboto', sans-serif;
 }
 .page-footer a { color: rgba(0,58,112,0.8); text-decoration: underline; }
-.page-footer .dedication { color: rgba(0,58,112,0.9); font-style: italic; font-size: 12px; margin-bottom: 4px; }
-.page-footer .disclaimer { font-size: 10px; color: rgba(0,58,112,0.4); margin-top: 8px; line-height: 1.7; }
+.page-footer .dedication { color: rgba(255,255,255,1); font-style: italic; font-size: 12px; margin-bottom: 4px; }
+.page-footer .disclaimer { font-size: 10px; color: rgba(99,99,99,1); margin-top: 8px; line-height: 1.7; }
 
 .screen { animation: fadeIn .35s ease; }
 @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
@@ -1290,3 +1290,126 @@ body.night-mode .img-skeleton {
 .share-btn:active { transform: scale(0.97); }
 body.night-mode .share-btn          { color: #7eb3f7; border-color: #7eb3f7; }
 body.night-mode .share-btn:hover    { background: #1e2d4a; }
+
+/* ── Night Mode ─────────────────────────────────── */
+body.night-mode {
+  --night-text: #e8e8e8;
+  --night-sub: #aab4c8;
+  --night-blue: #7eb3f7;
+}
+body.night-mode #landing-screen h1,
+body.night-mode #welcome-screen h1,
+body.night-mode .qt-title,
+body.night-mode .learn-detail-name,
+body.night-mode .lb-title { color: #7eb3f7 !important; -webkit-text-stroke: 0 !important; }
+
+body.night-mode .qt-desc,
+body.night-mode .landing-subtitle,
+body.night-mode label,
+body.night-mode .learn-info-label,
+body.night-mode .learn-dex-entry,
+body.night-mode .lb-table td,
+body.night-mode .lb-table th,
+body.night-mode .result-msg,
+body.night-mode .result-score-sub,
+body.night-mode .result-time { color: #aab4c8 !important; }
+
+body.night-mode .opt-btn,
+body.night-mode .img-opt-btn,
+body.night-mode .evo-opt-btn,
+body.night-mode .diff-btn,
+body.night-mode .toggle-btn,
+body.night-mode .learn-nav-btn,
+body.night-mode .learn-card,
+body.night-mode .hint-card,
+body.night-mode .learn-info-card { background: #1e2d4a !important; border-color: #2e4a7a !important; color: #aab4c8 !important; }
+
+body.night-mode .diff-btn.selected,
+body.night-mode .toggle-btn.active { background: #3D7DCA !important; color: #fff !important; }
+
+body.night-mode input[type="text"] { background: #1e2d4a !important; border-color: #2e4a7a !important; color: #e8e8e8 !important; }
+body.night-mode input[type="text"]::placeholder { color: #556a8a !important; }
+
+body.night-mode .opt-btn.correct,
+body.night-mode .img-opt-btn.correct,
+body.night-mode .evo-opt-btn.correct { background: #1a4a2a !important; border-color: #28a745 !important; }
+
+body.night-mode .opt-btn.wrong,
+body.night-mode .img-opt-btn.wrong,
+body.night-mode .evo-opt-btn.wrong { background: #4a1a1a !important; border-color: #dc3545 !important; }
+
+body.night-mode .lb-table tr { background: #1e2d4a !important; }
+body.night-mode .lb-table tr.lb-you { background: #2a3f6a !important; }
+body.night-mode .lb-table th { background: #16213e !important; color: #7eb3f7 !important; }
+
+/* ── Night Mode: missing text-colour overrides ───────────────── */
+
+/* Pokédex grid — Pokémon names */
+body.night-mode .learn-card .lc-name          { color: #c8d4e8 !important; }
+
+/* Pokédex detail — info values (Height, Weight, Category, Abilities) */
+body.night-mode .learn-info-value             { color: #e8e8e8 !important; }
+
+/* Pokédex detail — "Evolution Chain" section label */
+body.night-mode .learn-section-label          { color: #7eb3f7 !important; }
+
+/* Pokédex detail — evolution chain member names + card background */
+body.night-mode .learn-evo-member             { background: #1e2d4a !important; border-color: #2e4a7a !important; }
+body.night-mode .learn-evo-member:hover,
+body.night-mode .learn-evo-member.current     { background: #1e3a5a !important; border-color: #3D7DCA !important; }
+body.night-mode .learn-evo-member .evo-mem-name { color: #c8d4e8 !important; }
+
+/* Pokédex detail — dex entry yellow background */
+body.night-mode .learn-dex-entry              { background: #1e2a14 !important; border-color: #4a6a2a !important; }
+
+/* Game — question sub-label */
+body.night-mode .question-label               { color: #aab4c8 !important; }
+
+/* Evolution quiz — option button captions */
+body.night-mode .evo-opt-btn .evo-caption     { color: #aab4c8 !important; }
+
+/* Hints — card body text and label heading */
+body.night-mode .hint-card .entry-text        { color: #aab4c8 !important; }
+body.night-mode .hint-card strong             { color: #e8c050 !important; }
+
+/* Hints — hint buttons */
+body.night-mode .hint-btn                     { background: #1e2d1a !important; border-color: #4a6a2a !important; color: #e8c050 !important; }
+body.night-mode .hint-btn.used                { background: #2a3a1a !important; border-color: #6a8a3a !important; color: #c8a840 !important; }
+
+/* Settings — auto-duck label */
+body.night-mode .s-duck-label                 { color: #aab4c8 !important; }
+
+/* Leaderboard — "you" row text (was dark navy on dark blue) */
+body.night-mode .lb-you td                    { color: #7eb3f7 !important; }
+
+/* quiz-type-btn: dark background + border, matching other dark cards */
+body.night-mode .quiz-type-btn {
+    background: #1e2d4a !important;
+    border-color: #2e4a7a !important;
+}
+
+body.night-mode .quiz-type-btn:hover {
+    background: #243858 !important;
+    border-color: #3D7DCA !important;
+    box-shadow: 0 4px 12px rgba(61, 125, 202, 0.25) !important;
+}
+
+body.night-mode .quiz-type-btn:hover .qt-arrow {
+    color: #7eb3f7 !important;
+}
+
+/* coming-soon variant: keep it clearly disabled in dark mode */
+body.night-mode .quiz-type-btn--coming-soon:hover {
+    background: #1e2d4a !important;
+    border-color: #2e4a7a !important;
+    box-shadow: none !important;
+}
+
+.learn-browse-title {
+    font-family: 'Flexo', sans-serif;
+    font-size: clamp(26px, 6vw, 42px);
+    color: #003A70;
+    margin-bottom: 16px;
+}
+
+body.night-mode .learn-browse-title { color: #7eb3f7 !important; }
