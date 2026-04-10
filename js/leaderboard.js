@@ -72,7 +72,7 @@ name: playerName,
 score: `${correctCount}/${answeredCount}`,
 accuracy: pct,
 time: getTimeString(),
-difficulty: difficulty.charAt(0).toUpperCase()+difficulty.slice(1),
+difficulty: difficulty ? difficulty.charAt(0).toUpperCase() + difficulty.slice(1) : 'Unknown',
 mode: quizMode === 'full' ? 'Full Test' : 'Quick Test',
 sessionId: sessionId
 };
@@ -101,7 +101,7 @@ whos:"Who's That Pokémon?",
 identify:'Identify the Pokémon',
 evo:'Spot the Evolution'
 };
-const diffLabel = difficulty.charAt(0).toUpperCase()+difficulty.slice(1);
+const diffLabel = difficulty ? difficulty.charAt(0).toUpperCase() + difficulty.slice(1) : 'Unknown';
 const modeLabel = quizMode === 'full' ? 'Full Test' : 'Quick Test';
 document.getElementById('lb-title').textContent =
 `${quizLabels[quizType]} - ${diffLabel} ${modeLabel}`;
@@ -211,9 +211,7 @@ function renderLeaderboardTable() {
     const rowMode = (r.mode && String(r.mode).trim() !== '')
       ? String(r.mode).trim()
       : 'Quick Test';
-    return r.quiz === quizNames[quizType] &&
-      r.difficulty && String(r.difficulty).toLowerCase() === difficulty.toLowerCase() &&
-      rowMode === currentMode;
+    return r.quiz === quizNames[quizType] && r.difficulty && difficulty && String(r.difficulty).toLowerCase() === difficulty.toLowerCase() && rowMode === currentMode;
   });
 
   // Normalise accuracy to 0–100 integer

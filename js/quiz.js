@@ -34,8 +34,6 @@ let hintsRevealed = 0,
 	currentPokemonData = null;
 let autoNextTimer = null;
 let onEasterEggClose = null;
-let elapsedSeconds = 0,
-	elapsedTenths = 0;
 const QUICK_COUNT = 20;
 let sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2);
 let resultAudio = null;
@@ -55,16 +53,16 @@ function showWelcomePopup() {
 }
 
 function closeWelcomePopup() {
-	const popup = document.getElementById('welcome-popup');
-	popup.style.display = 'none';
-	document.body.style.overflow = '';
-	playClick();
-	const saved = localStorage.getItem('pokemommy_trainer_name');
-	if (saved) {
-		document.getElementById('name-popup-input').value = saved;
-		checkNamePopupReady();
-	}
-	showNamePopup();
+    const popup = document.getElementById('welcome-popup');
+    popup.style.display = 'none';
+    document.body.style.overflow = '';
+    playClick();
+    const saved = localStorage.getItem('pokemommy_trainer_name');
+    if (saved) {
+        document.getElementById('name-popup-input').value = saved;
+        checkNamePopupReady();
+    }
+    showNamePopup();
 }
 
 // ── Trainer Name Popup ───────────────────────────────────────────
@@ -73,13 +71,13 @@ function showNamePopup() {
 	popup.style.display = 'flex';
 	document.body.style.overflow = 'hidden';
 	setTimeout(() => document.getElementById('name-popup-input').focus(), 100);
-	const savedGender = localStorage.getItem('pokemommy_gender') || 'boy';
+	const savedGender = lsGet('pokemommy_gender', 'boy');
 	selectGender(savedGender);
 }
 
 function selectGender(gender) {
   playerGender = gender;
-  localStorage.setItem('pokemommy_gender', gender);
+  lsSet('pokemommy_gender', gender);
   const boyBtn = document.getElementById('gender-boy');
   const girlBtn = document.getElementById('gender-girl');
   if (gender === 'boy') {
@@ -122,7 +120,7 @@ function confirmTrainerName() {
 
   playerName = val;
   document.getElementById('player-name').value = val;
-  localStorage.setItem('pokemommy_trainer_name', val);
+  lsSet('pokemommy_trainer_name', val);
   document.getElementById('name-popup').style.display = 'none';
   document.body.style.overflow = '';
   playClick();
@@ -226,10 +224,10 @@ function saveSettings() {
   if (selected) spriteStyle = selected.dataset.style;
   autoDuck = document.getElementById('s-auto-duck').checked;
   // Persist
-  localStorage.setItem('pm_sfx_vol',      sfxVolume);
-  localStorage.setItem('pm_music_vol',    musicVolume);
-  localStorage.setItem('pm_sprite_style', spriteStyle);
-  localStorage.setItem('pm_auto_duck',    autoDuck);
+  lsSet('pm_sfx_vol', sfxVolume);
+  lsSet('pm_music_vol', musicVolume);
+  lsSet('pm_sprite_style', spriteStyle);
+  lsSet('pm_auto_duck', autoDuck);
   applyBgmVolume();
   _settingsSnapshot = null;
   closeSettings();
@@ -701,6 +699,7 @@ function triggerChosenOne(egg) {
 }
 
 function cleanupChosenOne() {
+	if (maulishTwTimer) { clearInterval(maulishTwTimer); maulishTwTimer = null; }
 	['maulish-cosmic', 'maulish-star-canvas', 'maulish-edge-aura', 'maulish-light-pillar']
 	.forEach(id => {
 		const el = document.getElementById(id);
@@ -1867,7 +1866,7 @@ async function startGame() {
 	const rawName = document.getElementById('player-name').value.trim();
 	playClick();
 	playerName = rawName;
-	localStorage.setItem('pokemommy_trainer_name', rawName);
+	lsSet('pokemommy_trainer_name', rawName);
 	document.getElementById('start-btn').disabled = true;
 	document.getElementById('start-btn').textContent = 'Loading…';
 	if (!allPokemon.length) await loadPokemonList();
@@ -1899,18 +1898,6 @@ async function startGame() {
 }
 
 
-function stopTimer() {
-	if (timerInterval) {
-		clearInterval(timerInterval);
-		timerInterval = null;
-	}
-}
-
-function getTimeString() {
-	const m = Math.floor(elapsedSeconds / 60);
-	const s = elapsedSeconds % 60;
-	return `${m}:${s.toString().padStart(2,'0')}`;
-}
 
 async function preloadQuestionImages(startIdx, count) {
 	const toLoad = questions.slice(startIdx, startIdx + count);
@@ -2614,6 +2601,14 @@ stopTimer();
 	}
 	  submitScore(pct);
   renderWrongAnswerReview();;
+  
+  //auto-scroll to review section if there are mistakes
+if (wrongAnswers.length > 0) {
+  setTimeout(() => {
+    document.getElementById('review-section')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 400);
+}
 }
 
 function shareScore() {

@@ -6,10 +6,17 @@ whosThatAudio.preload = 'auto';
 let audioCtx = null, soundOn = true;
 
 // ── SETTINGS ─────────────────────────────────────────────────────
-let sfxVolume   = parseFloat(localStorage.getItem('pm_sfx_vol')  ?? '0.7');
-let musicVolume = parseFloat(localStorage.getItem('pm_music_vol') ?? '0.5');
-let spriteStyle = localStorage.getItem('pm_sprite_style') || 'sd';
-let autoDuck    = localStorage.getItem('pm_auto_duck') !== 'false';
+function lsGet(key, fallback) {
+  try { const v = localStorage.getItem(key); return v !== null ? v : fallback; } catch(e) { return fallback; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(key, val); } catch(e) {}
+}
+
+let sfxVolume = parseFloat(lsGet('pm_sfx_vol', '0.7'));
+let musicVolume = parseFloat(lsGet('pm_music_vol', '0.5'));
+let spriteStyle = lsGet('pm_sprite_style', 'sd');
+let autoDuck = lsGet('pm_auto_duck', 'true') !== 'false';
 let bgmAudio = null;
 
 function initBgm() {
