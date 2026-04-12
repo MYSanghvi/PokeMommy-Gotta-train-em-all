@@ -2613,32 +2613,20 @@ if (wrongAnswers.length > 0) {
 
 function shareScore() {
   playClick();
-  const pct    = parseInt(document.getElementById('result-pct').textContent);
-  const name   = playerName || 'A Trainer';
-  const mode   = quizMode === 'full' ? 'Full Pokédex' : 'Quick Test';
-  const diff   = difficulty === 'hard' ? 'Hard 🕶️' : 'Easy';
-  const typeLabel = quizType === 'whos'     ? "Who's That Pokémon? 🎯"
-                  : quizType === 'identify' ? 'Identify the Pokémon 🔍'
-                  : 'Spot the Evolution ⚡';
-  const medal  = pct === 100 ? '🏆 PERFECT SCORE!' : pct >= 80 ? '⭐ Great score!' : pct >= 60 ? '👍 Not bad!' : '💪 Keep training!';
-  const wrongs = wrongAnswers.length;
-  const wrongLine = wrongs === 0 ? 'Zero mistakes — true Pokémon Master! 🌟' : `Got ${wrongs} wrong — can you do better?`;
-
-  const text = [
-    `${medal}`,
-    `${name} scored ${pct}% on PokéMommy!`,
-    `📋 ${typeLabel} | ${mode} | ${diff}`,
-    wrongLine,
-    `🎮 Try it yourself → ${window.location.href}`
-  ].join('\n');
-
-  if (navigator.share) {
-    navigator.share({ text }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(text)
-      .then(()  => showToast('Score copied to clipboard! 📋 Paste it anywhere.'))
-      .catch(()  => showToast('Share: ' + pct + '% on PokéMommy! 🎉'));
-  }
+  var mins = Math.floor(elapsedSeconds / 60);
+  var secs = elapsedSeconds % 60;
+  var t = mins + 'm ' + secs.toString().padStart(2,'0') + '.' + elapsedTenths + 's';
+  shareScoreCard({
+    pct:    answeredCount > 0 ? Math.round(correctCount / answeredCount * 100) : 0,
+    name:   playerName,
+    score:  correctCount + ' / ' + answeredCount,
+    time:   t,
+    diff:   difficulty === 'hard'     ? 'Hard'                 : 'Easy',
+    mode:   quizMode   === 'full'     ? 'Full (151)'           : 'Quick (20)',
+    qtype:  quizType   === 'whos'     ? "Who's That Pokemon?"
+          : quizType   === 'identify' ? 'Identify the Pokemon' : 'Spot the Evolution',
+    gender: playerGender
+  });
 }
 
 
