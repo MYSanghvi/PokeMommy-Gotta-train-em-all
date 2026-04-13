@@ -37,6 +37,8 @@ function applyBgmVolume() {
   bgmAudio.volume = soundOn ? musicVolume : 0;
 }
 
+let _unduckTimer = null;
+
 function duckBgm() {
   if (!bgmAudio || !autoDuck || musicVolume === 0) return;
   if (_unduckTimer) { clearInterval(_unduckTimer); _unduckTimer = null; }
@@ -58,7 +60,7 @@ function duckBgm() {
   }, PERIOD);
 }
 
-let _unduckTimer = null;
+
 function unduckBgm() {
   if (!bgmAudio) return;
   if (_unduckTimer) { clearInterval(_unduckTimer); _unduckTimer = null; }

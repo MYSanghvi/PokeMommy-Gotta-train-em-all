@@ -1,5 +1,5 @@
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrQs92eiCFtd2-TJd7iWQH-ZJhaHcLfcmNBf608pqSGLjeZS2YNdxgekOBw5TLt_g/exec';
-
+let _scoreSubmitted = false;
 // ── Timer ────────────────────────────────────────────────────────
 let timerInterval=null, timerSeconds=0, timerTenths=0;
 
@@ -28,38 +28,57 @@ function getTimeString() {
 
 // ── Submit Score ─────────────────────────────────────────────────
 async function submitScore(pct) {
-    if (_scoreSubmitted) return;
-    _scoreSubmitted = true;
-const statusEl = document.getElementById('lb-submit-status');
-const quizNames={whos:"Who's That Pokémon?",identify:'Identify the Pokémon',evo:'Spot the Evolution'};
-const payload={
-quiz: quizNames[quizType],
-name: playerName,
-score: `${correctCount}/${answeredCount}`,
-accuracy: pct,
-time: getTimeString(),
-difficulty: difficulty ? difficulty.charAt(0).toUpperCase() + difficulty.slice(1) : 'Unknown',
-mode: quizMode === 'full' ? 'Full Test' : 'Quick Test',
-sessionId: sessionId
-};
-try {
-  await fetch(APPS_SCRIPT_URL, {
-  method: 'POST', mode: 'no-cors',
-  headers: { 'Content-Type': 'text/plain' },
-  body: JSON.stringify(payload)
-});
-  statusEl.textContent = '✅ Score submitted! Check the leaderboard to confirm.';
-//    setTimeout(()=>{ statusEl.textContent = ''; }, 10000); // 10s for success
+  if (_scoreSubmitted) return;
+  _scoreSubmitted = true;
+  const statusEl = document.getElementById('lb-submit-status');
+  if (statusEl) {
+    statusEl.innerHTML =
+      '<span class="lb-submit-inner">' +
+        '<img src="img/pokeball_gray.png" class="pokeball-spinner" alt="Saving" />' +
+        '<span class="lb-submit-msg">Saving to the Hall of Fame…</span>' +
+      '</span>';
+    statusEl.className = 'lb-submit-status lb-submit-loading';
+  }
+  const quizNames = { whos: "Who's That Pokémon?", identify: "Identify the Pokémon", evo: "Spot the Evolution" };
+  const payload = {
+    quiz: quizNames[quizType],
+    name: playerName,
+    score: `${correctCount}/${answeredCount}`,
+    accuracy: pct,
+    time: getTimeString(),
+    difficulty: difficulty ? difficulty.charAt(0).toUpperCase() + difficulty.slice(1) : 'Unknown',
+    mode: quizMode === 'full' ? 'Full Test' : 'Quick Test',
+    sessionId: sessionId
+  };
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message || 'Score rejected by server');
+    if (statusEl) {
+      statusEl.className = 'lb-submit-status';
+      statusEl.innerHTML = '';
+      statusEl.textContent = '✅ Score saved!';
+      setTimeout(() => { statusEl.textContent = ''; }, 10000);
+    }
   } catch(e) {
-    statusEl.textContent = '⚠️ Could not save score. Check your connection.';
-//    setTimeout(()=>{ statusEl.textContent = ''; }, 10000); // 10s for error
+    if (statusEl) {
+      statusEl.className = 'lb-submit-status';
+      statusEl.innerHTML = '';
+      statusEl.textContent = '❌ Could not save score. Check your connection.';
+      setTimeout(() => { statusEl.textContent = ''; }, 10000);
+    }
   }
 }
 
 // ── Leaderboard ──────────────────────────────────────────────────
 let lbAllData=[];
 let _lbMsgTimer = null;
-let _scoreSubmitted = false;
+
 
 function showLeaderboard() {
 playClick();
@@ -110,11 +129,15 @@ async function fetchLeaderboard() {
 
   // ── Rotating loading messages ─────────────────────────────────
   wrap.innerHTML = '';
-  const loadEl = document.createElement('p');
-  loadEl.setAttribute('style',
-    'padding:40px 20px;text-align:center;font-size:14px;line-height:1.8;' +
-    'color:#555;font-family:sans-serif;display:block !important;visibility:visible !important;'
-  );
+const pokeballWrap = document.createElement('div');
+pokeballWrap.className = 'lb-fetch-loading';
+pokeballWrap.innerHTML = '<img src="img/pokeball_gray.png" class="pokeball-spinner" alt="Loading" />';
+wrap.appendChild(pokeballWrap);
+const loadEl = document.createElement('p');
+loadEl.setAttribute('style',
+'padding:4px 20px 32px;text-align:center;font-size:14px;line-height:1.8;' +
+'color:#555;font-family:sans-serif;display:block !important;visibility:visible !important;'
+);
 
   const shuffled = [...LB_LOADING_MSGS].sort(()=>Math.random()-0.5);
   let msgIndex = 0;
@@ -129,7 +152,7 @@ async function fetchLeaderboard() {
   _lbMsgTimer = setInterval(showNextMsg, 5000);
 
   const controller = new AbortController();
-  const timeout = setTimeout(()=>controller.abort(), 40000); // 40s — enough for all messages
+  const timeout = setTimeout(()=>controller.abort(), 15000); // 15s — enough for all messages
 
   try {
     const res = await fetch(`${APPS_SCRIPT_URL}?action=get`, {
@@ -273,7 +296,7 @@ if (!playerInTop50 && playerName) {
     'text-align:center;font-size:12px;color:#888;font-family:sans-serif;' +
     'padding:12px 20px 4px;margin:0;'
   );
-  note.textContent = `Your score didn't make the Top 50 this time, ${playerName}. Keep training!`;
+  note.textContent = `Your score didn't make the Leaderboard, ${playerName}. Keep training!`;
   wrap.appendChild(note);
 }
 }
