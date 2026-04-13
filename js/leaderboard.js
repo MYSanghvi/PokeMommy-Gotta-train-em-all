@@ -25,45 +25,11 @@ function getTimeString() {
 }
 
 
-// ── Show Results ─────────────────────────────────────────────────
-function showResults() {
-  stopTimer();
-  const pct = answeredCount===0 ? 0 : Math.round(correctCount/answeredCount*100);
-  const tiers=[
-    [100,'🏆','Perfect score! True Pokémon Master!'],
-    [80, '🌟','Excellent! Almost a Pokémon Master!'],
-    [60, '😄','Good job, Trainer! Keep it up!'],
-    [40, '😅','Not bad, but keep training!'],
-    [0,  '😢','Time to revisit your Pokédex!']
-  ];
-  const [,emoji,msg]=tiers.find(([t])=>pct>=t);
-  document.getElementById('result-emoji').textContent      = emoji;
-  document.getElementById('result-player-name').textContent= playerName;
-  document.getElementById('result-pct').textContent        = pct+'%';
-  document.getElementById('result-score-sub').textContent  = `${correctCount} / ${answeredCount} correct`;
-  document.getElementById('result-time').textContent       = `⏱ ${getTimeString()}`;
-  document.getElementById('result-msg').textContent        = msg;
-  document.getElementById('lb-submit-status').textContent  = 'Saving score…';
-  showScreen('result-screen');
-
-  setTimeout(()=>{ celebrationConfetti(pct); if(pct>=80) playFanfare(); }, 300);
-
-  // ── 100% Mew easter egg ───────────────────────────────────────
-  if (pct === 100) setTimeout(triggerMewEasterEgg, 800);
-
-  if(soundOn){
-    stopResultAudio();
-    const soundFile = pct===100?'champion-sound': pct>=50?'win-sound':'lose-sound';
-    resultAudio = new Audio(`sounds/${soundFile}.mp3`);
-    resultAudio.volume = sfxVolume;
-	resultAudio.play().catch(()=>{});
-  }
-
-  submitScore(pct);
-}
 
 // ── Submit Score ─────────────────────────────────────────────────
 async function submitScore(pct) {
+    if (_scoreSubmitted) return;
+    _scoreSubmitted = true;
 const statusEl = document.getElementById('lb-submit-status');
 const quizNames={whos:"Who's That Pokémon?",identify:'Identify the Pokémon',evo:'Spot the Evolution'};
 const payload={
@@ -77,21 +43,23 @@ mode: quizMode === 'full' ? 'Full Test' : 'Quick Test',
 sessionId: sessionId
 };
 try {
-  await fetch(APPS_SCRIPT_URL,{
-    method:'POST', mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
-  });
-  statusEl.textContent='✅ Score submitted! Check the leaderboard to confirm.';
-} catch(e) {
-  statusEl.textContent='⚠️ Could not save score. Check your connection.';
-}
-setTimeout(()=>{ statusEl.textContent=''; }, 3000);
+  await fetch(APPS_SCRIPT_URL, {
+  method: 'POST', mode: 'no-cors',
+  headers: { 'Content-Type': 'text/plain' },
+  body: JSON.stringify(payload)
+});
+  statusEl.textContent = '✅ Score submitted! Check the leaderboard to confirm.';
+//    setTimeout(()=>{ statusEl.textContent = ''; }, 10000); // 10s for success
+  } catch(e) {
+    statusEl.textContent = '⚠️ Could not save score. Check your connection.';
+//    setTimeout(()=>{ statusEl.textContent = ''; }, 10000); // 10s for error
+  }
 }
 
 // ── Leaderboard ──────────────────────────────────────────────────
 let lbAllData=[];
 let _lbMsgTimer = null;
+let _scoreSubmitted = false;
 
 function showLeaderboard() {
 playClick();
@@ -112,6 +80,7 @@ fetchLeaderboard();
 
 function closeLeaderboard() {
   playClick();
+  if (_lbMsgTimer) { clearInterval(_lbMsgTimer); _lbMsgTimer = null; }
   showScreen('result-screen');
 }
 

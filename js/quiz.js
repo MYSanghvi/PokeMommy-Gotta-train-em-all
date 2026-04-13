@@ -53,16 +53,16 @@ function showWelcomePopup() {
 }
 
 function closeWelcomePopup() {
-    const popup = document.getElementById('welcome-popup');
-    popup.style.display = 'none';
-    document.body.style.overflow = '';
-    playClick();
-    const saved = localStorage.getItem('pokemommy_trainer_name');
-    if (saved) {
-        document.getElementById('name-popup-input').value = saved;
-        checkNamePopupReady();
-    }
-    showNamePopup();
+  const popup = document.getElementById('welcome-popup');
+  popup.style.display = 'none';
+  document.body.style.overflow = '';
+  playClick();
+  const saved = lsGet('pokemommy_trainer_name', '');
+  if (saved) {
+    document.getElementById('name-popup-input').value = saved;
+    checkNamePopupReady();
+  }
+  showNamePopup();
 }
 
 // ── Trainer Name Popup ───────────────────────────────────────────
@@ -1881,6 +1881,7 @@ async function startGame() {
 	correctCount = 0;
 	answeredCount = 0;
 	wrongAnswers = [];
+	_scoreSubmitted = false;
 	document.getElementById('q-total').textContent = questions.length;
 	document.getElementById('player-display').textContent = playerName;
 	const genderImg = document.getElementById('trainer-gender-img');
@@ -2567,55 +2568,77 @@ function learnNavigate(dir) {
 	if (next) openLearnDetail(next.id, false);
 }
 
+
 // ── Results ───────────────────────────────────────────────────────
 function showResults() {
-stopTimer();
-	const pct = answeredCount === 0 ? 0 : Math.round(correctCount / answeredCount * 100);
-	const tiers = [
-		[100, '🏆', 'Perfect score! True Pokémon Master!'],
-		[80, '🌟', 'Excellent! Almost a Pokémon Master!'],
-		[60, '😄', 'Good job, Trainer! Keep it up!'],
-		[40, '😅', 'Not bad, but keep training!'],
-		[0, '😢', 'Time to revisit your Pokédex!']
-	];
-	const [, emoji, msg] = tiers.find(([t]) => pct >= t);
-	document.getElementById('result-emoji').textContent = emoji;
-	document.getElementById('result-player-name').textContent = playerName;
-	document.getElementById('result-pct').textContent = pct + '%';
-	document.getElementById('result-score-sub').textContent = `${correctCount} / ${answeredCount} correct`;
-	document.getElementById('result-time').textContent = `⏱ ${getTimeString()}`;
-	document.getElementById('result-msg').textContent = msg;
-	document.getElementById('lb-submit-status').textContent = 'Saving score…';
-	showScreen('result-screen');
-	setTimeout(() => {
-		celebrationConfetti(pct);
-		if (pct >= 80) playFanfare();
-	}, 300);
-	if (pct === 100) setTimeout(triggerMewEasterEgg, 800);
-	if (soundOn) {
-		stopResultAudio();
-		const soundFile = pct === 100 ? 'champion-sound' : pct >= 50 ? 'win-sound' : 'lose-sound';
-		resultAudio = new Audio(`sounds/${soundFile}.mp3`);
-		resultAudio.volume = sfxVolume;   // ← add this line
-		resultAudio.play().catch(() => {});
-	}
-	  submitScore(pct);
-  renderWrongAnswerReview();;
-  
-  //auto-scroll to review section if there are mistakes
-if (wrongAnswers.length > 0) {
+  stopTimer();
+  const pct = answeredCount === 0 ? 0 : Math.round(correctCount / answeredCount * 100);
+  const tiers = [
+    [100, '🏆', 'Perfect score! True Pokémon Master!'],
+    [80,  '🌟', 'Excellent! Almost a Pokémon Master!'],
+    [60,  '😄', 'Good job, Trainer! Keep it up!'],
+    [40,  '😅', 'Not bad, but keep training!'],
+    [0,   '😢', 'Time to revisit your Pokédex!']
+  ];
+  const [, emoji, msg] = tiers.find(([t]) => pct >= t);
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-player-name').textContent = playerName;
+  document.getElementById('result-pct').textContent = '0%';
+  document.getElementById('result-score-sub').textContent = `${correctCount} / ${answeredCount} correct`;
+  document.getElementById('result-time').textContent = `⏱ ${getTimeString()}`;
+  document.getElementById('result-msg').textContent = msg;
+  document.getElementById('lb-submit-status').textContent = 'Saving score…';
+  showScreen('result-screen');
+
   setTimeout(() => {
-    document.getElementById('review-section')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 400);
-}
+    const el = document.getElementById('result-pct');
+    const duration = 1000;
+    const start = performance.now();
+    function tick(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(eased * pct) + '%';
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        el.textContent = pct + '%';
+        el.classList.add('result-pct--pop');
+        setTimeout(() => el.classList.remove('result-pct--pop'), 600);
+        celebrationConfetti(pct);
+        if (pct >= 80) playFanfare();
+      }
+    }
+    requestAnimationFrame(tick);
+  }, 300);
+
+  if (pct === 100) setTimeout(triggerMewEasterEgg, 800);
+
+  if (soundOn) {
+    stopResultAudio();
+    const soundFile = pct === 100 ? 'champion-sound' : pct >= 50 ? 'win-sound' : 'lose-sound';
+    resultAudio = new Audio(`sounds/${soundFile}.mp3`);
+    resultAudio.volume = sfxVolume;
+    resultAudio.play().catch(() => {});
+  }
+
+  submitScore(pct);
+  renderWrongAnswerReview();
+
+  if (wrongAnswers.length > 0) {
+    setTimeout(() => {
+      const reviewEl = document.getElementById('review-section');
+      if (reviewEl && reviewEl.style.display !== 'none') {
+        reviewEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 600);
+  }
 }
 
 function shareScore() {
   playClick();
-  var mins = Math.floor(elapsedSeconds / 60);
-  var secs = elapsedSeconds % 60;
-  var t = mins + 'm ' + secs.toString().padStart(2,'0') + '.' + elapsedTenths + 's';
+  var mins = Math.floor(timerSeconds / 60);
+  var secs = timerSeconds % 60;
+  var t = mins + 'm ' + secs.toString().padStart(2, '0') + '.' + (timerTenths % 10) + 's';
   shareScoreCard({
     pct:    answeredCount > 0 ? Math.round(correctCount / answeredCount * 100) : 0,
     name:   playerName,
@@ -2717,13 +2740,34 @@ function updateAccuracy() {
 
 function nextQuestion() {
   const nxt = document.getElementById('next-btn');
-  if (nxt && nxt.disabled) return; // guard: block double-fire
+  if (nxt && nxt.disabled) return; // guard block double-fire
   if (nxt) nxt.disabled = true;
   playClick();
   clearAutoNext();
-  currentQ++;
-  if (currentQ < questions.length) renderQuestion();
-  else showResults();
+
+  const sectionId = quizType === 'whos' ? 'whos-section'
+    : quizType === 'identify' ? 'identify-section'
+    : 'evo-section';
+  const el = document.getElementById(sectionId);
+
+  const advance = () => {
+    currentQ++;
+    if (currentQ < questions.length) {
+      renderQuestion();
+    } else {
+      showResults();
+    }
+  };
+
+  if (el) {
+    el.classList.add('q-leaving');
+    setTimeout(() => {
+      el.classList.remove('q-leaving');
+      advance();
+    }, 185); // matches q-fade-slide-out duration
+  } else {
+    advance();
+  }
 }
 
 function confirmReset() {
@@ -2756,11 +2800,13 @@ function confirmGoHome() {
         gs.style.pointerEvents = '';
         if (ok) {
             playClick();
-            stopTimer();
-            clearAutoNext();
+			stopTimer();
+			clearAutoNext();
 			unduckBgm();
-            currentQ = 0; correctCount = 0; answeredCount = 0;
-            difficulty = null;
+			wrongAnswers = [];
+			_scoreSubmitted = false;
+			currentQ = 0; correctCount = 0; answeredCount = 0;
+			difficulty = null;
             document.getElementById('btn-easy').classList.remove('selected');
             document.getElementById('btn-hard').classList.remove('selected');
             document.getElementById('start-btn').disabled = true;
@@ -2771,11 +2817,13 @@ function confirmGoHome() {
 }
 
 function restartGame() {
-	playClick();
-	stopResultAudio();
-	stopTimer();
-	clearAutoNext();
-	unduckBgm();
+playClick();
+stopResultAudio();
+stopTimer();
+clearAutoNext();
+unduckBgm();
+wrongAnswers = [];
+_scoreSubmitted = false;
 	difficulty = null;
 	document.getElementById('btn-easy').classList.remove('selected');
 	document.getElementById('btn-hard').classList.remove('selected');
@@ -2878,4 +2926,36 @@ document.addEventListener('keydown', (e) => {
 			return;
 		}
 	}
+});
+
+// ── Keyboard shortcuts: press 1–4 to select answers ─────────────
+document.addEventListener('keydown', (e) => {
+  if (!['1', '2', '3', '4'].includes(e.key)) return;
+
+  // Don't fire while typing in a text field
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+  // Only fire when the game screen is active
+  const gameScreen = document.getElementById('game-screen');
+  if (!gameScreen || gameScreen.style.display === 'none') return;
+
+  // Pick the right options grid based on the current quiz type
+  const gridId = quizType === 'identify' ? 'img-options-grid'
+               : quizType === 'evo'      ? 'evo-options-grid'
+               : 'options-grid';
+
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+
+  const buttons = [...grid.querySelectorAll('button')];
+  if (buttons.length === 0) return;
+
+  // Don't re-fire if the question is already answered (all buttons disabled)
+  if (buttons.every(b => b.disabled)) return;
+
+  const idx = parseInt(e.key) - 1; // '1' → index 0, '2' → index 1, etc.
+  if (buttons[idx] && !buttons[idx].disabled) {
+    buttons[idx].click();
+  }
 });
