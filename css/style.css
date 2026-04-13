@@ -1,3 +1,8 @@
+html {
+  scrollbar-gutter: stable; /* reserves scrollbar space always — viewport never shrinks */
+}
+
+
 @font-face {
   font-family: 'PokemonSolid';
   src: url('../fonts/Pokemon Solid.ttf') format('truetype');
@@ -21,18 +26,34 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-background: #FFCB05; font-family: 'Flexo', sans-serif;
-min-height: 100vh; display: flex; flex-direction: column;
-align-items: center; justify-content: center; padding: 16px; overflow-x: hidden;
-touch-action: manipulation; padding-top: max(16px, env(safe-area-inset-top));
+  background: #FFCB05;
+  font-family: Flexo, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;       /* ← CHANGED: no longer depends on viewport width */
+  justify-content: flex-start;/* ← CHANGED: card starts from top, no overflow clipping */
+  padding: 16px;
+  overflow-x: hidden;
+  touch-action: manipulation;
+  padding-top: max(16px, env(safe-area-inset-top));
 }
+
 small { font-family: 'Flexo', sans-serif; }
 
 .card {
-  background: #fff; border-radius: 16px; padding: clamp(12px, 3vw, 20px) clamp(12px, 3vw, 22px);
-  max-width: 520px; width: 100%;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18); text-align: center;
+  background: #fff;
+  border-radius: 16px;
+  padding: clamp(12px, 3vw, 20px) clamp(12px, 3vw, 22px);
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  text-align: center;
   overflow: visible;
+  margin-left: auto;          /* ← ADD: centers using its own margins */
+  margin-right: auto;         /* ← ADD: not affected by scrollbar width changes */
+  margin-top: auto;           /* ← ADD: vertically centers on short-content screens */
+  margin-bottom: auto;        /* ← ADD */
 }
 
 /* ── LANDING ── */
@@ -378,6 +399,17 @@ color: #003A70; margin-bottom: 10px; line-height: 1.2; font-weight: 700;
 
 /* ── RESULTS ── */
 #result-screen { display: none; }
+
+#result-screen.active-screen {
+  display: block;
+}
+
+body:has(#result-screen[style*="block"]) {
+  align-items: flex-start;
+  padding-top: 24px;
+  padding-bottom: 32px;
+}
+
 .result-name  { font-family: 'Flexo', sans-serif; font-size: 16px; font-weight: 700; color: #3D7DCA; margin-bottom: 10px; }
 .result-pct   {
   font-family: 'Flexo', sans-serif; font-size: clamp(56px,14vw,88px);
@@ -405,6 +437,19 @@ color: #003A70; margin-bottom: 10px; line-height: 1.2; font-weight: 700;
   color: #888; transition: all .2s; font-family: 'Roboto', sans-serif;
 }
 .home-btn:hover { border-color: #3D7DCA; color: #3D7DCA; background: #eef4fc; }
+
+@keyframes result-pct-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.2); }
+  70%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.result-pct--pop {
+  animation: result-pct-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  display: inline-block; /* required for transform to apply to text */
+}
+
 
 /* ── LEADERBOARD ── */
 .lb-title {
@@ -456,6 +501,8 @@ color: #003A70; margin-bottom: 10px; line-height: 1.2; font-weight: 700;
   font-family: 'Roboto', sans-serif; font-size: 11px; font-weight: 700; text-align: center;
   margin-bottom: 10px; min-height: 16px; color: #aaa;
 }
+
+
 
 /* ── TYPE BADGES ── */
 .type-badge {
@@ -568,9 +615,17 @@ color: #003A70; margin-bottom: 10px; line-height: 1.2; font-weight: 700;
 
 /* ── FOOTER ── */
 .page-footer {
-  max-width: 520px; width: 100%; margin-top: 20px;
-  text-align: center; color: rgba(0,58,112,0.6);
-  font-size: 11px; line-height: 1.9; padding: 0 4px 24px; font-family: 'Roboto', sans-serif;
+  max-width: 520px;
+  width: 100%;
+  margin-top: 20px;
+  margin-left: auto;   /* ← ADD */
+  margin-right: auto;  /* ← ADD */
+  text-align: center;
+  color: rgba(0,58,112,0.6);
+  font-size: 11px;
+  line-height: 1.9;
+  padding: 0 4px 24px;
+  font-family: Roboto, sans-serif;
 }
 .page-footer a { color: rgba(0,58,112,0.8); text-decoration: underline; }
 .page-footer .dedication { color: rgba(255,255,255,1); font-style: italic; font-size: 12px; margin-bottom: 4px; }
@@ -1125,7 +1180,14 @@ body.night-mode .qt-coming-soon-badge {
   animation: q-fade-slide 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-
+@keyframes q-fade-slide-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
+}
+.q-leaving {
+  animation: q-fade-slide-out 0.18s cubic-bezier(0.4, 0, 0.6, 1) both;
+  pointer-events: none; /* block double-tap during exit */
+}
 
 /* ── SETTINGS CLOSE BUTTON ───────────────────────────────────── */
 .s-title-row {
@@ -1165,73 +1227,6 @@ body.night-mode .s-close-btn:hover {
   color: #fff;
 }
 
-
-/* ── WRONG ANSWER REVIEW ─────────────────────────────────────────── */
-#review-section {
-  margin-top: 24px;
-  border-top: 2px solid #f0f0f0;
-  padding-top: 18px;
-}
-.review-title {
-  font-family: Flexo, sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  color: #003A70;
-  margin-bottom: 14px;
-  text-align: left;
-}
-.review-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background: #f9f9f9;
-  border: 2px solid #eee;
-  border-radius: 12px;
-  padding: 10px 12px;
-  margin-bottom: 10px;
-  text-align: left;
-}
-.review-img-wrap {
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0f0f0;
-  border-radius: 50%;
-  overflow: hidden;
-}
-.review-img-wrap img {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-.review-info {
-  flex: 1;
-  min-width: 0;
-}
-.review-question {
-  font-family: Flexo, sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  color: #555;
-  margin-bottom: 4px;
-  line-height: 1.4;
-}
-.review-correct {
-  font-family: Roboto, sans-serif;
-  font-size: 13px;
-  color: #155724;
-  font-weight: 700;
-  margin-bottom: 2px;
-}
-.review-wrong {
-  font-family: Roboto, sans-serif;
-  font-size: 12px;
-  color: #721c24;
-}
 
 /* Night mode overrides */
 body.night-mode .review-card {
@@ -1417,84 +1412,85 @@ body.night-mode .learn-browse-title { color: #7eb3f7 !important; }
 
 /* ── REVIEW MISTAKES ───────────────────────────────────────── */
 #review-section {
-    margin-top: 24px;
-    width: 100%;
-    text-align: left;
+  margin-top: 24px;
+  width: 100%;
+  text-align: left;
+}
+
+#review-section[style*="block"] {
+  animation: fadeIn 0.4s ease both;
 }
 
 .review-title {
-    font-family: 'Flexo', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    color: #003A70;
-    margin-bottom: 12px;
-    text-align: center;
-    padding-bottom: 10px;
-    border-top: 2px solid #eee;
-    padding-top: 18px;
+  font-family: Flexo, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #003A70;
+  margin-bottom: 12px;
+  text-align: center;
+  padding-bottom: 10px;
+  border-top: 2px solid #eee;
+  padding-top: 18px;
 }
 
 .review-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: #f9f9f9;
-    border: 2px solid #f0d0d0;
-    border-radius: 12px;
-    padding: 10px 12px;
-    margin-bottom: 10px;
-    text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff5f5;
+  border: 2px solid #f0d0d0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  text-align: left;
 }
 
 .review-img-wrap {
-    width: 60px;
-    height: 60px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #fff;
-    border-radius: 50%;
-    border: 2px solid #eee;
-    overflow: hidden;
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 50%;
+  border: 2px solid #eee;
+  overflow: hidden;
 }
 
 .review-sprite {
-    width: 52px;
-    height: 52px;
-    object-fit: contain;
-    image-rendering: pixelated;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 
-.review-info {
-    flex: 1;
-    min-width: 0;
-}
+.review-info { flex: 1; min-width: 0; }
 
 .review-question {
-    font-family: 'Flexo', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    color: #555;
-    margin-bottom: 5px;
-    line-height: 1.4;
+  font-family: Flexo, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #555;
+  margin-bottom: 5px;
+  line-height: 1.4;
 }
 
 .review-correct {
-    font-family: 'Roboto', sans-serif;
-    font-size: 12px;
-    color: #155724;
-    font-weight: 700;
-    margin-bottom: 3px;
-    line-height: 1.4;
+  font-family: Roboto, sans-serif;
+  font-size: 12px;
+  color: #155724;
+  font-weight: 700;
+  margin-bottom: 3px;
+  line-height: 1.4;
 }
 
 .review-wrong {
-    font-family: 'Roboto', sans-serif;
-    font-size: 12px;
-    color: #721c24;
-    font-weight: 700;
-    line-height: 1.4;
+  font-family: Roboto, sans-serif;
+  font-size: 12px;
+  color: #721c24;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 /* Dark mode */
@@ -1517,3 +1513,56 @@ body.night-mode .review-question { color: #aab4c8; }
 body.night-mode .review-correct  { color: #6daa45; }
 body.night-mode .review-wrong    { color: #dd6974; }
 /* ── REVIEW MISTAKES END ────────────────────────────────────── */
+
+
+/* ── Keyboard shortcut badges on answer buttons ──────────────── */
+#options-grid .opt-btn,
+#img-options-grid .img-opt-btn,
+#evo-options-grid .evo-opt-btn {
+  position: relative; /* needed for ::before positioning */
+}
+
+#options-grid .opt-btn::before,
+#img-options-grid .img-opt-btn::before,
+#evo-options-grid .evo-opt-btn::before {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.15);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+  border-radius: 4px;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+#options-grid .opt-btn:nth-child(1)::before,
+#img-options-grid .img-opt-btn:nth-child(1)::before,
+#evo-options-grid .evo-opt-btn:nth-child(1)::before { content: '1'; }
+
+#options-grid .opt-btn:nth-child(2)::before,
+#img-options-grid .img-opt-btn:nth-child(2)::before,
+#evo-options-grid .evo-opt-btn:nth-child(2)::before { content: '2'; }
+
+#options-grid .opt-btn:nth-child(3)::before,
+#img-options-grid .img-opt-btn:nth-child(3)::before,
+#evo-options-grid .evo-opt-btn:nth-child(3)::before { content: '3'; }
+
+#options-grid .opt-btn:nth-child(4)::before,
+#img-options-grid .img-opt-btn:nth-child(4)::before,
+#evo-options-grid .evo-opt-btn:nth-child(4)::before { content: '4'; }
+
+/* Hide badges after the question is answered */
+#options-grid .opt-btn.correct::before,
+#options-grid .opt-btn.wrong::before,
+#img-options-grid .img-opt-btn.correct::before,
+#img-options-grid .img-opt-btn.wrong::before,
+#evo-options-grid .evo-opt-btn.correct::before,
+#evo-options-grid .evo-opt-btn.wrong::before {
+  display: none;
+}
+/* ── Keyboard shortcut badges on answer buttons ends ──────────────── */
