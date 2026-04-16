@@ -39,51 +39,86 @@ let sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2);
 let resultAudio = null;
 let wrongAnswers = [];
 let _settingsSnapshot = null;
+let _learnRequestToken = 0;
+let _hintRequestToken = 0;
+let _quizRunToken = 0;
 
+
+function byId(id) {
+  return document.getElementById(id);
+}
+
+function setBodyScrollLocked(locked) {
+  const hasBlockingOverlay =
+    (byId('welcome-popup') && byId('welcome-popup').style.display === 'flex') ||
+    (byId('name-popup') && byId('name-popup').style.display === 'flex') ||
+    (byId('easter-overlay') && byId('easter-overlay').style.display === 'flex') ||
+    (byId('settings-overlay') && byId('settings-overlay').classList.contains('open'));
+
+  document.body.style.overflow = (locked || hasBlockingOverlay) ? 'hidden' : '';
+}
 
 // ════════════════════════════════════════════════════════════════
 // ── WELCOME POPUP MESSAGE
 // ════════════════════════════════════════════════════════════════
 
 function showWelcomePopup() {
-	const popup = document.getElementById('welcome-popup');
-	popup.style.display = 'flex';
-	// Prevent background scroll
-	document.body.style.overflow = 'hidden';
+  const popup = byId('welcome-popup');
+  if (!popup) return;
+
+  popup.style.display = 'flex';
+  setBodyScrollLocked(true);
 }
 
 function closeWelcomePopup() {
-  const popup = document.getElementById('welcome-popup');
-  popup.style.display = 'none';
-  document.body.style.overflow = '';
+  const popup = byId('welcome-popup');
+  if (popup) popup.style.display = 'none';
+
   playClick();
+  setBodyScrollLocked(false);
+
   const saved = lsGet('pokemommy_trainer_name', '');
   if (saved) {
-    document.getElementById('name-popup-input').value = saved;
+    const input = byId('name-popup-input');
+    if (input) input.value = saved;
     checkNamePopupReady();
   }
+
   showNamePopup();
 }
 
 // ── Trainer Name Popup ───────────────────────────────────────────
 function showNamePopup() {
-	const popup = document.getElementById('name-popup');
-	popup.style.display = 'flex';
-	document.body.style.overflow = 'hidden';
-	setTimeout(() => document.getElementById('name-popup-input').focus(), 100);
-	const savedGender = lsGet('pokemommy_gender', 'boy');
-	selectGender(savedGender);
+  const popup = byId('name-popup');
+  const input = byId('name-popup-input');
+  if (!popup) return;
+
+  popup.style.display = 'flex';
+  setBodyScrollLocked(true);
+
+  if (input) {
+    setTimeout(() => {
+      input.focus();
+    }, 100);
+  }
+
+  const savedGender = lsGet('pokemommy_gender', 'boy');
+  selectGender(savedGender);
 }
 
 function selectGender(gender) {
   playerGender = gender;
   lsSet('pokemommy_gender', gender);
-  const boyBtn = document.getElementById('gender-boy');
-  const girlBtn = document.getElementById('gender-girl');
+
+  const boyBtn = byId('gender-boy');
+  const girlBtn = byId('gender-girl');
+  if (!boyBtn || !girlBtn) return;
+
   if (gender === 'boy') {
     boyBtn.style.background = '#3D7DCA';
     boyBtn.style.borderColor = '#3D7DCA';
     boyBtn.style.color = '#fff';
+
     girlBtn.style.background = '#f9f9f9';
     girlBtn.style.borderColor = '#ddd';
     girlBtn.style.color = '#666';
@@ -91,6 +126,7 @@ function selectGender(gender) {
     girlBtn.style.background = '#3D7DCA';
     girlBtn.style.borderColor = '#3D7DCA';
     girlBtn.style.color = '#fff';
+
     boyBtn.style.background = '#f9f9f9';
     boyBtn.style.borderColor = '#ddd';
     boyBtn.style.color = '#666';
@@ -98,111 +134,163 @@ function selectGender(gender) {
 }
 
 function checkNamePopupReady() {
-	const val = document.getElementById('name-popup-input').value.trim();
-	const btn = document.getElementById('name-popup-btn');
-	btn.disabled = !val;
-	btn.style.opacity = val ? '1' : '0.5';
+  const input = byId('name-popup-input');
+  const btn = byId('name-popup-btn');
+  if (!input || !btn) return;
+
+  const val = input.value.trim();
+  btn.disabled = !val;
+  btn.style.opacity = val ? '1' : '0.5';
 }
 
 function confirmTrainerName() {
-  const val = document.getElementById('name-popup-input').value.trim();
+  const input = byId('name-popup-input');
+  const namePopup = byId('name-popup');
+  const playerNameInput = byId('player-name');
+
+  if (!input) return;
+
+  const val = input.value.trim();
   if (!val) return;
 
-      if (val.toLowerCase().replace(/\s+/g, '') === 'missingno') {
-    document.getElementById('name-popup').style.display = 'none';
-    document.body.style.overflow = '';
-    onEasterEggClose = () => { showNamePopup(); };
+  if (val.toLowerCase().replace(/\s+/g, '') === 'missingno') {
+    if (namePopup) namePopup.style.display = 'none';
+    setBodyScrollLocked(false);
+
+    onEasterEggClose = () => {
+      showNamePopup();
+    };
+
     triggerMissingNo();
-    document.getElementById('name-popup-input').value = '';
+    input.value = '';
     checkNamePopupReady();
     return;
   }
 
   playerName = val;
-  document.getElementById('player-name').value = val;
+  if (playerNameInput) playerNameInput.value = val;
   lsSet('pokemommy_trainer_name', val);
-  document.getElementById('name-popup').style.display = 'none';
-  document.body.style.overflow = '';
+
+  if (namePopup) namePopup.style.display = 'none';
+  setBodyScrollLocked(false);
+
   playClick();
-const hadEgg = checkTrainerNameEgg(val);
-if (hadEgg) {
+
+  const hadEgg = checkTrainerNameEgg(val);
+  if (hadEgg) {
     const prevClose = onEasterEggClose;
     onEasterEggClose = () => {
-        if (prevClose) prevClose();
-        initBgm();
-        setTimeout(checkNightMode, 300);
-    }
-} else {
+      if (prevClose) prevClose();
+      initBgm();
+      setTimeout(checkNightMode, 300);
+    };
+  } else {
     initBgm();
     setTimeout(checkNightMode, 300);
-}
+  }
 }
 // ── SETTINGS PANEL ───────────────────────────────────────────────
 function openSettings() {
-    // ── Snapshot current values so X can restore them ────────────
-    _settingsSnapshot = {
-        sfx:    sfxVolume,
-        music:  musicVolume,
-        sprite: spriteStyle,
-        duck:   autoDuck
-    };
-    // ─────────────────────────────────────────────────────────────
+  _settingsSnapshot = {
+    sfx: sfxVolume,
+    music: musicVolume,
+    sprite: spriteStyle,
+    duck: autoDuck
+  };
 
-    const ov = document.getElementById('settings-overlay');
-    const sfxSlider   = document.getElementById('s-sfx-slider');
-    const musicSlider = document.getElementById('s-music-slider');
-    sfxSlider.value   = Math.round(sfxVolume * 100);
-    musicSlider.value = Math.round(musicVolume * 100);
-    sfxSlider.style.setProperty('--pct',   sfxSlider.value   + '%');
-    musicSlider.style.setProperty('--pct', musicSlider.value + '%');
-    document.getElementById('s-sfx-val').textContent   = sfxSlider.value   + '%';
-    document.getElementById('s-music-val').textContent = musicSlider.value + '%';
-    document.getElementById('s-sfx-card').classList.toggle('s-muted',   sfxVolume   === 0);
-    document.getElementById('s-music-card').classList.toggle('s-muted', musicVolume === 0);
-    document.getElementById('s-auto-duck').checked = autoDuck;
-    updateDuckRow(Math.round(musicVolume * 100));
-    const duckRow = document.getElementById('s-duck-row');
-    duckRow.style.opacity      = musicVolume === 0 ? '0.4' : '1';
-    duckRow.style.pointerEvents = musicVolume === 0 ? 'none' : '';
-    document.querySelectorAll('.s-sprite-btn').forEach(b =>
-        b.classList.toggle('selected', b.dataset.style === spriteStyle));
-    ov.classList.add('open');
+  const ov = byId('settings-overlay');
+  const sfxSlider = byId('s-sfx-slider');
+  const musicSlider = byId('s-music-slider');
+  const sfxVal = byId('s-sfx-val');
+  const musicVal = byId('s-music-val');
+  const sfxCard = byId('s-sfx-card');
+  const musicCard = byId('s-music-card');
+  const autoDuckToggle = byId('s-auto-duck');
+  const duckRow = byId('s-duck-row');
+
+  if (!ov || !sfxSlider || !musicSlider || !sfxVal || !musicVal || !sfxCard || !musicCard || !autoDuckToggle || !duckRow) {
+    console.warn('Settings UI is incomplete in the DOM.');
+    return;
+  }
+
+  sfxSlider.value = Math.round(sfxVolume * 100);
+  musicSlider.value = Math.round(musicVolume * 100);
+
+  sfxSlider.style.setProperty('--pct', sfxSlider.value + '%');
+  musicSlider.style.setProperty('--pct', musicSlider.value + '%');
+
+  sfxVal.textContent = sfxSlider.value + '%';
+  musicVal.textContent = musicSlider.value + '%';
+
+  sfxCard.classList.toggle('s-muted', sfxVolume === 0);
+  musicCard.classList.toggle('s-muted', musicVolume === 0);
+
+  autoDuckToggle.checked = autoDuck;
+
+  updateDuckRow(Math.round(musicVolume * 100));
+  duckRow.style.opacity = musicVolume === 0 ? '0.4' : '1';
+  duckRow.style.pointerEvents = musicVolume === 0 ? 'none' : '';
+
+  document.querySelectorAll('.s-sprite-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.style === spriteStyle);
+  });
+
+  ov.classList.add('open');
+  setBodyScrollLocked(true);
 }
 
 function closeSettings() {
-    // ── Restore all values to what they were before opening ──────
-    if (_settingsSnapshot) {
-        sfxVolume   = _settingsSnapshot.sfx;
-        musicVolume = _settingsSnapshot.music;
-        spriteStyle = _settingsSnapshot.sprite;
-        autoDuck    = _settingsSnapshot.duck;
-        applyBgmVolume();
-        _settingsSnapshot = null;
-    }
-    // ─────────────────────────────────────────────────────────────
-    document.getElementById('settings-overlay').classList.remove('open');
+  if (_settingsSnapshot) {
+    sfxVolume = _settingsSnapshot.sfx;
+    musicVolume = _settingsSnapshot.music;
+    spriteStyle = _settingsSnapshot.sprite;
+    autoDuck = _settingsSnapshot.duck;
+    applyBgmVolume();
+    _settingsSnapshot = null;
+  }
+
+  const overlay = byId('settings-overlay');
+  if (overlay) overlay.classList.remove('open');
+
+  setBodyScrollLocked(false);
 }
 
 function handleSettingsOverlayClick(e) {
-  if (e.target === document.getElementById('settings-overlay')) closeSettings();
+  const overlay = byId('settings-overlay');
+  if (overlay && e.target === overlay) closeSettings();
 }
 
 function updateDuckRow(musicVal) {
-  const row = document.querySelector('.s-duck-row');
-  const toggle = document.getElementById('s-auto-duck');
+  const row = byId('s-duck-row');
+  const toggle = byId('s-auto-duck');
   const disabled = musicVal === 0;
-  row.style.opacity = disabled ? '0.4' : '';
-  row.style.pointerEvents = disabled ? 'none' : '';
-  toggle.disabled = disabled;
+
+  if (row) {
+    row.style.opacity = disabled ? '0.4' : '1';
+    row.style.pointerEvents = disabled ? 'none' : '';
+  }
+
+  if (toggle) {
+    toggle.disabled = disabled;
+    if (disabled) toggle.checked = false;
+  }
 }
 
 let _sliderHintTimer = null;
+
 function onSettingsSlider(type, val) {
-  val = parseInt(val);
+  val = parseInt(val, 10);
+  if (Number.isNaN(val)) return;
+
   const pct = val + '%';
-  document.getElementById(`s-${type}-val`).textContent = pct;
-  document.getElementById(`s-${type}-slider`).style.setProperty('--pct', pct);
-  document.getElementById(`s-${type}-card`).classList.toggle('s-muted', val === 0);
+  const valueEl = byId(`s-${type}-val`);
+  const sliderEl = byId(`s-${type}-slider`);
+  const cardEl = byId(`s-${type}-card`);
+
+  if (valueEl) valueEl.textContent = pct;
+  if (sliderEl) sliderEl.style.setProperty('--pct', pct);
+  if (cardEl) cardEl.classList.toggle('s-muted', val === 0);
+
   if (type === 'sfx') {
     sfxVolume = val / 100;
     clearTimeout(_sliderHintTimer);
@@ -210,27 +298,37 @@ function onSettingsSlider(type, val) {
   } else {
     musicVolume = val / 100;
     applyBgmVolume();
-	updateDuckRow(val);
-    const duckRow = document.getElementById('s-duck-row');
-    duckRow.style.opacity = val === 0 ? '0.4' : '1';
-    duckRow.style.pointerEvents = val === 0 ? 'none' : '';
+    updateDuckRow(val);
+
+    const duckRow = byId('s-duck-row');
+    if (duckRow) {
+      duckRow.style.opacity = val === 0 ? '0.4' : '1';
+      duckRow.style.pointerEvents = val === 0 ? 'none' : '';
+    }
   }
 }
 
 function saveSettings() {
-  // Read sprite style
-  playClick(); 
+  playClick();
+
   const selected = document.querySelector('.s-sprite-btn.selected');
+  const autoDuckToggle = byId('s-auto-duck');
+
   if (selected) spriteStyle = selected.dataset.style;
-  autoDuck = document.getElementById('s-auto-duck').checked;
-  // Persist
+  if (autoDuckToggle) autoDuck = autoDuckToggle.checked;
+
   lsSet('pm_sfx_vol', sfxVolume);
   lsSet('pm_music_vol', musicVolume);
   lsSet('pm_sprite_style', spriteStyle);
   lsSet('pm_auto_duck', autoDuck);
+
   applyBgmVolume();
   _settingsSnapshot = null;
-  closeSettings();
+
+  const overlay = byId('settings-overlay');
+  if (overlay) overlay.classList.remove('open');
+
+  setBodyScrollLocked(false);
 }
 
 
@@ -240,28 +338,59 @@ function saveSettings() {
 
 // ── Easter egg overlay helpers ───────────────────────────────────
 function showEasterEgg(emoji, title, body, img = null) {
-	const emojiEl = document.getElementById('easter-emoji');
-	if (img) {
-		emojiEl.innerHTML = `<img src="${img}" alt="" style="width:80px;height:80px;object-fit:contain;image-rendering:pixelated;"/>`;
-	} else {
-		emojiEl.innerHTML = emoji;
-	}
-	document.getElementById('easter-title').textContent = title;
-	document.getElementById('easter-body').textContent = body;
-	document.getElementById('easter-overlay').style.display = 'flex';
-	vibrate([50, 30, 50, 30, 100]);
+  const emojiEl = byId('easter-emoji');
+  const titleEl = byId('easter-title');
+  const bodyEl = byId('easter-body');
+  const overlay = byId('easter-overlay');
+
+  if (!emojiEl || !titleEl || !bodyEl || !overlay) {
+    console.warn('Easter egg overlay DOM is incomplete.');
+    return;
+  }
+
+  if (img) {
+    emojiEl.innerHTML = '';
+    const image = document.createElement('img');
+    image.src = img;
+    image.alt = title || 'Easter egg';
+    image.loading = 'eager';
+    image.decoding = 'async';
+    emojiEl.appendChild(image);
+  } else {
+    emojiEl.textContent = emoji;
+  }
+
+  titleEl.textContent = title;
+  bodyEl.textContent = body;
+  overlay.style.display = 'flex';
+  setBodyScrollLocked(true);
+
+  vibrate([50, 30, 50, 30, 100]);
 }
 
 function closeEasterEgg() {
-	cleanupChosenOne();
-	cleanupWifey();
-	cleanupHelu();
-	document.getElementById('easter-overlay').style.display = 'none';
-	if (onEasterEggClose) { onEasterEggClose(); onEasterEggClose = null; }
+  cleanupChosenOne();
+  cleanupWifey();
+  cleanupHelu();
+
+  const overlay = byId('easter-overlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+    overlay.classList.remove('maulish-active', 'wifey-active', 'helu-active');
+  }
+
+  setBodyScrollLocked(false);
+
+  if (onEasterEggClose) {
+    const fn = onEasterEggClose;
+    onEasterEggClose = null;
+    fn();
+  }
 }
 
 // ══════════ MAULISHMASTER — THE CHOSEN ONE ══════════
 let maulishStarAnim = null;
+let maulishStarResizeHandler = null;
 
 function maulishCreateReverb(ctx, dur = 2.5, decay = 3.5) {
 	const cv = ctx.createConvolver();
@@ -461,43 +590,54 @@ function playChosenSound() {
 }
 
 function maulishInitStars() {
-	const canvas = document.getElementById('maulish-star-canvas');
-	if (!canvas) return;
-	const ctx = canvas.getContext('2d');
-	canvas.width = window.innerWidth;
-	canvas.height = window.innerHeight;
-	const stars = Array.from({
-		length: 200
-	}, () => ({
-		x: Math.random() * canvas.width,
-		y: Math.random() * canvas.height,
-		r: Math.random() * 1.8 + 0.3,
-		speed: Math.random() * 0.4 + 0.1,
-		twinkle: Math.random() * Math.PI * 2
-	}));
+  const canvas = document.getElementById('maulish-star-canvas');
+  if (!canvas) return;
 
-	function draw() {
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		stars.forEach(s => {
-			s.twinkle += 0.03;
-			const alpha = 0.4 + 0.6 * Math.abs(Math.sin(s.twinkle));
-			ctx.beginPath();
-			ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-			ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
-			ctx.fill();
-			s.y -= s.speed;
-			if (s.y < -2) {
-				s.y = canvas.height + 2;
-				s.x = Math.random() * canvas.width;
-			}
-		});
-		maulishStarAnim = requestAnimationFrame(draw);
-	}
-	draw();
-	window.addEventListener('resize', () => {
-		canvas.width = window.innerWidth;
-		canvas.height = window.innerHeight;
-	});
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const stars = Array.from({ length: 200 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.8 + 0.3,
+    speed: Math.random() * 0.4 + 0.1,
+    twinkle: Math.random() * Math.PI * 2
+  }));
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    stars.forEach(s => {
+      s.twinkle += 0.03;
+      const alpha = 0.4 + 0.6 * Math.abs(Math.sin(s.twinkle));
+
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
+      ctx.fill();
+
+      s.y -= s.speed;
+      if (s.y < -2) {
+        s.y = canvas.height + 2;
+        s.x = Math.random() * canvas.width;
+      }
+    });
+
+    maulishStarAnim = requestAnimationFrame(draw);
+  }
+
+  if (maulishStarResizeHandler) {
+    window.removeEventListener('resize', maulishStarResizeHandler);
+  }
+
+  maulishStarResizeHandler = () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  };
+
+  window.addEventListener('resize', maulishStarResizeHandler);
+  draw();
 }
 
 function maulishSpawnRings() {
@@ -699,29 +839,47 @@ function triggerChosenOne(egg) {
 }
 
 function cleanupChosenOne() {
-	if (maulishTwTimer) { clearInterval(maulishTwTimer); maulishTwTimer = null; }
-	['maulish-cosmic', 'maulish-star-canvas', 'maulish-edge-aura', 'maulish-light-pillar']
-	.forEach(id => {
-		const el = document.getElementById(id);
-		if (el) el.remove();
-	});
-	if (maulishStarAnim) {
-		cancelAnimationFrame(maulishStarAnim);
-		maulishStarAnim = null;
-	}
-	const card = document.getElementById('easter-card');
-	const overlay = document.getElementById('easter-overlay');
-	if (card) {
-		card.classList.remove('maulish-active');
-		card.style.opacity = '';
-		card.style.transform = '';
-		// Remove injected Chosen One elements so they don't bleed into other easter eggs
-		card.querySelectorAll('.maulish-halo-ring, .maulish-nebula, .maulish-chosen-banner')
-			.forEach(el => el.remove());
-	}
-	if (overlay) {
-		overlay.classList.remove('maulish-active');
-	}
+  if (maulishTwTimer) {
+    clearInterval(maulishTwTimer);
+    maulishTwTimer = null;
+  }
+
+  if (maulishStarAnim) {
+    cancelAnimationFrame(maulishStarAnim);
+    maulishStarAnim = null;
+  }
+
+  if (maulishStarResizeHandler) {
+    window.removeEventListener('resize', maulishStarResizeHandler);
+    maulishStarResizeHandler = null;
+  }
+
+  [
+    'maulish-cosmic',
+    'maulish-star-canvas',
+    'maulish-edge-aura',
+    'maulish-light-pillar',
+    'chosen-one-blocker'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  });
+
+  document.querySelectorAll('.maulish-energy-ring, .maulish-energy-particle').forEach(el => el.remove());
+
+  const card = document.getElementById('easter-card');
+  const overlay = document.getElementById('easter-overlay');
+
+  if (card) {
+    card.classList.remove('maulish-active');
+    card.style.opacity = '';
+    card.style.transform = '';
+    card.querySelectorAll('.maulish-halo-ring, .maulish-nebula, .maulish-chosen-banner').forEach(el => el.remove());
+  }
+
+  if (overlay) {
+    overlay.classList.remove('maulish-active');
+  }
 }
 // ══════════ END CHOSEN ONE ══════════
 
@@ -1715,6 +1873,11 @@ function goHome() {
 	stopWhosThatAudio();
 	clearAutoNext();
 	unduckBgm();
+	clearQuizTransientState();
+_hintRequestToken++;
+_learnRequestToken++;
+_quizRunToken++;
+scoreSubmitted = false;
 	if (timerInterval) {
 		clearInterval(timerInterval);
 		timerInterval = null;
@@ -1882,6 +2045,11 @@ async function startGame() {
 	correctCount = 0;
 	answeredCount = 0;
 	wrongAnswers = [];
+	_quizRunToken++;
+	_hintRequestToken++;
+	sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+	scoreSubmitted = false;
+	clearQuizTransientState();	
 	_scoreSubmitted = false;
 	document.getElementById('q-total').textContent = questions.length;
 	document.getElementById('player-display').textContent = playerName;
@@ -2288,37 +2456,90 @@ function checkEvoAnswer(btn, evoQ, choseNone, chosenName) {
 }
 
 async function revealHint(level) {
-	if (hintsRevealed >= level) return;
-	playHint();
-	if (!currentPokemonData) {
-		const id = quizType === 'evo' ? questions[currentQ].evoQ.subject.id : questions[currentQ].correct.id;
-		const [pr, sr] = await Promise.all([fetch(`https://pokeapi.co/api/v2/pokemon/${id}`), fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`)]);
-		currentPokemonData = {
-			...await pr.json(),
-			species: await sr.json()
-		};
-	}
-	hintsRevealed = level;
-	for (let i = 1; i <= level; i++) {
-		const b = document.getElementById(`hint-btn-${i}`);
-		b.classList.add('used');
-		b.disabled = true;
-	}
-	if (level < 3) document.getElementById(`hint-btn-${level+1}`).disabled = false;
-	const card = document.createElement('div');
-	card.className = 'hint-card';
-	if (level === 1) {
-  const g = currentPokemonData.species.genera.find(g => g.language.name === 'en');
-  card.innerHTML = `<strong>Hint 1 - Category</strong><br>${g ? g.genus : 'Unknown'}`;
-} else if (level === 2) {
-  const b = currentPokemonData.types.map(t => `<span class="type-badge t-${t.type.name}">${capitalize(t.type.name)}</span>`).join(' ');
-  card.innerHTML = `<strong>Hint 2 - Type</strong><br>${b}`;
-} else {
-  const e = currentPokemonData.species.flavor_text_entries.find(e => e.language.name === 'en' && (e.version.name === 'red' || e.version.name === 'blue')) ||
-            currentPokemonData.species.flavor_text_entries.find(e => e.language.name === 'en');
-  card.innerHTML = `<strong>Hint 3 - Pokédex Entry</strong><br><span class="entry-text">${e ? e.flavor_text.replace(/\f/g, ' ') : 'No entry found.'}</span>`;
-}
-	document.getElementById('hint-cards').appendChild(card);
+  if (hintsRevealed >= level) return;
+
+  const hintCards = byId('hint-cards');
+  if (!hintCards) return;
+
+  playHint();
+
+  const requestToken = ++_hintRequestToken;
+  const activeQuestionIndex = currentQ;
+  const activeQuizType = quizType;
+
+  try {
+    if (!currentPokemonData) {
+      const id = quizType === 'evo'
+        ? questions[currentQ]?.evoQ?.subject?.id
+        : questions[currentQ]?.correct?.id;
+
+      if (!id) return;
+
+      const [pr, sr] = await Promise.all([
+        fetch(`https://pokeapi.co/api/v2/pokemon/${id}`),
+        fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`)
+      ]);
+
+      if (!pr.ok || !sr.ok) throw new Error('Hint data request failed');
+
+      const pokemonJson = await pr.json();
+      const speciesJson = await sr.json();
+
+      if (
+        requestToken !== _hintRequestToken ||
+        activeQuestionIndex !== currentQ ||
+        activeQuizType !== quizType
+      ) {
+        return;
+      }
+
+      currentPokemonData = {
+        ...pokemonJson,
+        species: speciesJson
+      };
+    }
+
+    hintsRevealed = level;
+
+    for (let i = 1; i <= level; i++) {
+      const b = byId(`hint-btn-${i}`);
+      if (b) {
+        b.classList.add('used');
+        b.disabled = true;
+      }
+    }
+
+    if (level < 3) {
+      const nextBtn = byId(`hint-btn-${level + 1}`);
+      if (nextBtn) nextBtn.disabled = false;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'hint-card';
+
+    if (level === 1) {
+      const g = currentPokemonData.species.genera.find(g => g.language.name === 'en');
+      card.innerHTML = `<strong>Hint 1 - Category</strong><div class="entry-text">${g ? g.genus : 'Unknown'}</div>`;
+    } else if (level === 2) {
+      const types = currentPokemonData.types.map(t => capitalize(t.type.name)).join(', ');
+      card.innerHTML = `<strong>Hint 2 - Type</strong><div class="entry-text">${types || 'Unknown'}</div>`;
+    } else {
+      const e =
+        currentPokemonData.species.flavor_text_entries.find(
+          e => e.language.name === 'en' && (e.version.name === 'red' || e.version.name === 'blue')
+        ) ||
+        currentPokemonData.species.flavor_text_entries.find(
+          e => e.language.name === 'en'
+        );
+
+      card.innerHTML = `<strong>Hint 3 - Pokédex Entry</strong><div class="entry-text">${e ? e.flavor_text.replace(/\f/g, ' ') : 'No entry found.'}</div>`;
+    }
+
+    hintCards.appendChild(card);
+  } catch (err) {
+    console.error('revealHint failed:', err);
+    showToast("Couldn't load hint data. Check your connection.");
+  }
 }
 
 // ── Pokédex ──────────────────────────────────────────────────────
@@ -2370,75 +2591,122 @@ function filterLearnList() {
 	buildLearnGrid(allPokemon.filter(p => displayName(p.name).toLowerCase().includes(q) || String(p.id).padStart(3, '0').includes(q)));
 }
 async function openLearnDetail(pokemonId, fromBrowse = true) {
-	learnCurrentId = pokemonId;
-	if (fromBrowse) learnPreviousScreen = 'learn-browse-screen';
-	const sprite = document.getElementById('learn-sprite'),
-		spn = document.getElementById('learn-spinner');
-	sprite.style.opacity = '0';
-	spn.style.display = 'block';
-	document.getElementById('learn-detail-name').textContent = '…';
-	document.getElementById('learn-detail-num').textContent = '…';
-	document.getElementById('learn-category').textContent = '…';
-	document.getElementById('learn-type').innerHTML = '';
-	document.getElementById('learn-dex-entry').textContent = 'Loading…';
-	document.getElementById('learn-evo-line').innerHTML = '';
-	document.getElementById('learn-speaker-btn').classList.remove('playing');
-	stopLearnAudio();
-	document.getElementById('learn-nav-prev').disabled = pokemonId === 1;
-	document.getElementById('learn-nav-next').disabled = pokemonId === 151;
-	showScreen('learn-detail-screen');
-	let pokeData, specData;
-try {
-  const [pr, sr] = await Promise.all([
-    fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`),
-    fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`)
-  ]);
-  if (!pr.ok || !sr.ok) throw new Error('API error');
-  pokeData = await pr.json();
-  specData = await sr.json();
-} catch(e) {
-  document.getElementById('learn-spinner').style.display = 'none';
-  document.getElementById('learn-dex-entry').textContent =
-    "⚠️ Couldn't reach Professor Oak's lab — check your connection.";
-  showToast("⚠️ Couldn't load Pokémon data. Check your connection!");
-  return;
-}
-	
-	const p = allPokemon.find(x => x.id === pokemonId);
-	sprite.onload = () => {
-		spn.style.display = 'none';
-		sprite.style.opacity = '1';
-	};
-	sprite.onerror = () => {
-		sprite.onerror = null;
-		sprite.src = fallbackUrl(pokemonId);
-	};
-	sprite.src = gifUrl(p.name);
-	attachLongPress(sprite, pokemonId);
-	const nameEl = document.getElementById('learn-detail-name');
-	nameEl.textContent = displayName(p.name);
-	nameEl.style.fontFamily = "'Flexo', sans-serif";
-	nameEl.style.webkitTextStroke = 'none';
-	document.getElementById('learn-detail-num').textContent = '#' + String(pokemonId).padStart(3, '0');
-	const genus = specData.genera.find(g => g.language.name === 'en');
-	document.getElementById('learn-category').textContent = genus ? genus.genus : '—';
-	document.getElementById('learn-type').innerHTML = pokeData.types
-		.map(t => `<span class="type-badge t-${t.type.name}" style="margin-right:4px">${capitalize(t.type.name)}</span>`).join('');
-	const entry = specData.flavor_text_entries.find(e => e.language.name === 'en' && (e.version.name === 'red' || e.version.name === 'blue')) || specData.flavor_text_entries.find(e => e.language.name === 'en');
-	document.getElementById('learn-dex-entry').textContent = entry ? entry.flavor_text.replace(/[\f\n\r]/g, ' ') : 'No Pokédex entry available.';
+  const requestToken = ++_learnRequestToken;
+  learnCurrentId = pokemonId;
 
-	if (learnCurrentId !== pokemonId) return; // ← If navigated away, abort
+  if (fromBrowse) learnPreviousScreen = 'learn-browse-screen';
 
-	if (soundOn) {
-		stopLearnAudio();
-		const btn = document.getElementById('learn-speaker-btn');
-		btn.classList.add('playing');
-		learnAudio = new Audio(`sounds/eng_${String(pokemonId).padStart(3,'0')}.mp3`);
-		learnAudio.volume = sfxVolume;
-		learnAudio.play().catch(() => btn.classList.remove('playing'));
-		learnAudio.onended = () => btn.classList.remove('playing');
-	}
-	await buildLearnEvoLine(pokemonId, specData);
+  const sprite = byId('learn-sprite');
+  const spn = byId('learn-spinner');
+  const nameEl = byId('learn-detail-name');
+  const numEl = byId('learn-detail-num');
+  const categoryEl = byId('learn-category');
+  const typeEl = byId('learn-type');
+  const dexEl = byId('learn-dex-entry');
+  const evoEl = byId('learn-evo-line');
+  const speakerBtn = byId('learn-speaker-btn');
+  const prevBtn = byId('learn-nav-prev');
+  const nextBtn = byId('learn-nav-next');
+
+  if (!sprite || !spn || !nameEl || !numEl || !categoryEl || !typeEl || !dexEl || !evoEl || !speakerBtn || !prevBtn || !nextBtn) {
+    console.warn('Learn detail DOM is incomplete.');
+    return;
+  }
+
+  sprite.style.opacity = '0';
+  spn.style.display = 'block';
+  nameEl.textContent = '…';
+  numEl.textContent = '…';
+  categoryEl.textContent = '…';
+  typeEl.innerHTML = '';
+  dexEl.textContent = 'Loading…';
+  evoEl.innerHTML = '';
+  speakerBtn.classList.remove('playing');
+
+  stopLearnAudio();
+
+  prevBtn.disabled = pokemonId === 1;
+  nextBtn.disabled = pokemonId === 151;
+
+  showScreen('learn-detail-screen');
+
+  let pokeData, specData;
+
+  try {
+    const [pr, sr] = await Promise.all([
+      fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`),
+      fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`)
+    ]);
+
+    if (!pr.ok || !sr.ok) throw new Error('API error');
+
+    pokeData = await pr.json();
+    specData = await sr.json();
+
+    if (requestToken !== _learnRequestToken || learnCurrentId !== pokemonId) return;
+  } catch (e) {
+    if (requestToken !== _learnRequestToken || learnCurrentId !== pokemonId) return;
+
+    spn.style.display = 'none';
+    dexEl.textContent = "⚠️ Couldn't reach Professor Oak's lab — check your connection.";
+    showToast("⚠️ Couldn't load Pokémon data. Check your connection!");
+    return;
+  }
+
+  const p = allPokemon.find(x => x.id === pokemonId);
+  if (!p) {
+    spn.style.display = 'none';
+    dexEl.textContent = '⚠️ Pokémon data not found.';
+    return;
+  }
+
+  sprite.onload = () => {
+    if (requestToken !== _learnRequestToken || learnCurrentId !== pokemonId) return;
+    spn.style.display = 'none';
+    sprite.style.opacity = '1';
+  };
+
+  sprite.onerror = () => {
+    sprite.onerror = null;
+    sprite.src = fallbackUrl(pokemonId);
+  };
+
+  sprite.src = gifUrl(p.name);
+  attachLongPress(sprite, pokemonId);
+
+  nameEl.textContent = displayName(p.name);
+  nameEl.style.fontFamily = "'Flexo', sans-serif";
+  nameEl.style.webkitTextStroke = 'none';
+
+  numEl.textContent = '#' + String(pokemonId).padStart(3, '0');
+
+  const genus = specData.genera.find(g => g.language.name === 'en');
+  categoryEl.textContent = genus ? genus.genus : '—';
+
+  typeEl.innerHTML = pokeData.types
+    .map(t => `<span class="type-badge t-${t.type.name}">${capitalize(t.type.name)}</span>`)
+    .join('');
+
+  const entry =
+    specData.flavor_text_entries.find(
+      e => e.language.name === 'en' && (e.version.name === 'red' || e.version.name === 'blue')
+    ) ||
+    specData.flavor_text_entries.find(
+      e => e.language.name === 'en'
+    );
+
+  dexEl.textContent = entry
+    ? entry.flavor_text.replace(/[\f\n\r]/g, ' ')
+    : 'No Pokédex entry available.';
+
+  if (requestToken !== _learnRequestToken || learnCurrentId !== pokemonId) return;
+
+  try {
+    await buildEvolutionLine(specData.evolution_chain?.url, pokemonId);
+  } catch (err) {
+    console.error('buildEvolutionLine failed:', err);
+    evoEl.innerHTML = '<div class="hint-card">Could not load evolution line.</div>';
+  }
 }
 
 
@@ -2572,6 +2840,9 @@ function learnNavigate(dir) {
 
 // ── Results ───────────────────────────────────────────────────────
 function showResults() {
+	clearQuizTransientState();
+	_hintRequestToken++;
+	_quizRunToken++;
   stopTimer();
   const pct = answeredCount === 0 ? 0 : Math.round(correctCount / answeredCount * 100);
   const tiers = [
@@ -2825,6 +3096,11 @@ clearAutoNext();
 unduckBgm();
 wrongAnswers = [];
 _scoreSubmitted = false;
+clearQuizTransientState();
+_hintRequestToken++;
+_learnRequestToken++;
+_quizRunToken++;
+scoreSubmitted = false;
 	difficulty = null;
 	document.getElementById('btn-easy').classList.remove('selected');
 	document.getElementById('btn-hard').classList.remove('selected');
@@ -2930,33 +3206,49 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ── Keyboard shortcuts: press 1–4 to select answers ─────────────
-document.addEventListener('keydown', (e) => {
-  if (!['1', '2', '3', '4'].includes(e.key)) return;
+window.addEventListener('keydown', e => {
+  const target = e.target;
+  const tag = target && target.tagName ? target.tagName.toLowerCase() : '';
 
-  // Don't fire while typing in a text field
-  const tag = document.activeElement?.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (
+    tag === 'input' ||
+    tag === 'textarea' ||
+    tag === 'select' ||
+    target?.isContentEditable
+  ) {
+    return;
+  }
 
-  // Only fire when the game screen is active
-  const gameScreen = document.getElementById('game-screen');
-  if (!gameScreen || gameScreen.style.display === 'none') return;
+  if (
+    (byId('welcome-popup') && byId('welcome-popup').style.display === 'flex') ||
+    (byId('name-popup') && byId('name-popup').style.display === 'flex') ||
+    (byId('easter-overlay') && byId('easter-overlay').style.display === 'flex') ||
+    (byId('settings-overlay') && byId('settings-overlay').classList.contains('open'))
+  ) {
+    return;
+  }
 
-  // Pick the right options grid based on the current quiz type
-  const gridId = quizType === 'identify' ? 'img-options-grid'
-               : quizType === 'evo'      ? 'evo-options-grid'
-               : 'options-grid';
+  const gameScreen = byId('game-screen');
+  if (!gameScreen || getComputedStyle(gameScreen).display === 'none') return;
 
-  const grid = document.getElementById(gridId);
+  if (!/^[1-4]$/.test(e.key)) return;
+
+  const gridId = quizType === 'identify'
+    ? 'img-options-grid'
+    : quizType === 'evo'
+      ? 'evo-options-grid'
+      : 'options-grid';
+
+  const grid = byId(gridId);
   if (!grid) return;
 
   const buttons = [...grid.querySelectorAll('button')];
   if (buttons.length === 0) return;
-
-  // Don't re-fire if the question is already answered (all buttons disabled)
   if (buttons.every(b => b.disabled)) return;
 
-  const idx = parseInt(e.key) - 1; // '1' → index 0, '2' → index 1, etc.
+  const idx = parseInt(e.key, 10) - 1;
   if (buttons[idx] && !buttons[idx].disabled) {
+    e.preventDefault();
     buttons[idx].click();
   }
 });

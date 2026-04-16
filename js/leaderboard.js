@@ -1,45 +1,64 @@
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrQs92eiCFtd2-TJd7iWQH-ZJhaHcLfcmNBf608pqSGLjeZS2YNdxgekOBw5TLt_g/exec';
-let _scoreSubmitted = false;
+let scoreSubmitted = false;
+
 // ── Timer ────────────────────────────────────────────────────────
-let timerInterval=null, timerSeconds=0, timerTenths=0;
+let timerInterval = null;
+let timerSeconds = 0;
+let timerTenths = 0;
 
 function startTimer() {
   stopTimer();
-  timerSeconds=0; timerTenths=0;
-  document.getElementById('timer-display').textContent='0:00.0';
-  timerInterval=setInterval(()=>{
+  timerSeconds = 0;
+  timerTenths = 0;
+
+  const timerEl = document.getElementById('timer-display');
+  if (timerEl) timerEl.textContent = '0:00.0';
+
+  timerInterval = setInterval(() => {
     timerTenths++;
-    timerSeconds=Math.floor(timerTenths/10);
-    const m=Math.floor(timerSeconds/60), s=timerSeconds%60, t=timerTenths%10;
-    document.getElementById('timer-display').textContent=`${m}:${String(s).padStart(2,'0')}.${t}`;
-  },100);
-}
-function stopTimer() {
-  if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
+    timerSeconds = Math.floor(timerTenths / 10);
+
+    const m = Math.floor(timerSeconds / 60);
+    const s = timerSeconds % 60;
+    const t = timerTenths % 10;
+
+    const el = document.getElementById('timer-display');
+    if (el) el.textContent = `${m}:${String(s).padStart(2, '0')}.${t}`;
+  }, 100);
 }
 
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
 
 function getTimeString() {
-  const m=Math.floor(timerSeconds/60), s=timerSeconds%60, t=timerTenths%10;
-  return `${m}m ${String(s).padStart(2,'0')}.${t}s`;
+  const m = Math.floor(timerSeconds / 60);
+  const s = timerSeconds % 60;
+  const t = timerTenths % 10;
+  return `${m}m ${String(s).padStart(2, '0')}.${t}s`;
 }
-
-
 
 // ── Submit Score ─────────────────────────────────────────────────
 async function submitScore(pct) {
-  if (_scoreSubmitted) return;
-  _scoreSubmitted = true;
+  if (scoreSubmitted) return;
+
   const statusEl = document.getElementById('lb-submit-status');
+  scoreSubmitted = true;
+
   if (statusEl) {
-    statusEl.innerHTML =
-      '<span class="lb-submit-inner">' +
-        '<img src="img/pokeball_gray.png" class="pokeball-spinner" alt="Saving" />' +
-        '<span class="lb-submit-msg">Saving to the Hall of Fame…</span>' +
-      '</span>';
+    statusEl.textContent = 'Saving to the Hall of Fame…';
     statusEl.className = 'lb-submit-status lb-submit-loading';
   }
-  const quizNames = { whos: "Who's That Pokémon?", identify: "Identify the Pokémon", evo: "Spot the Evolution" };
+
+  const quizNames = {
+    whos: "Who's That Pokémon?",
+    identify: 'Identify the Pokémon',
+    evo: 'Spot the Evolution'
+  };
+
   const payload = {
     quiz: quizNames[quizType],
     name: playerName,
@@ -50,56 +69,72 @@ async function submitScore(pct) {
     mode: quizMode === 'full' ? 'Full Test' : 'Quick Test',
     sessionId: sessionId
   };
+
   try {
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
+
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
     const data = await res.json();
     if (data.status !== 'ok') throw new Error(data.message || 'Score rejected by server');
+
     if (statusEl) {
       statusEl.className = 'lb-submit-status';
-      statusEl.innerHTML = '';
       statusEl.textContent = '✅ Score saved!';
-      setTimeout(() => { statusEl.textContent = ''; }, 10000);
+      setTimeout(() => {
+        statusEl.textContent = '';
+      }, 10000);
     }
-  } catch(e) {
+  } catch (e) {
+    scoreSubmitted = false;
+
     if (statusEl) {
       statusEl.className = 'lb-submit-status';
-      statusEl.innerHTML = '';
-      statusEl.textContent = '❌ Could not save score. Check your connection.';
-      setTimeout(() => { statusEl.textContent = ''; }, 10000);
+      statusEl.textContent = '❌ Could not save score. Check your connection and try again.';
+      setTimeout(() => {
+        statusEl.textContent = '';
+      }, 10000);
     }
+
+    console.error('submitScore failed:', e);
   }
 }
 
 // ── Leaderboard ──────────────────────────────────────────────────
-let lbAllData=[];
+let lbAllData = [];
 let _lbMsgTimer = null;
 
-
 function showLeaderboard() {
-playClick();
+  playClick();
 
-const quizLabels={
-whos:"Who's That Pokémon?",
-identify:'Identify the Pokémon',
-evo:'Spot the Evolution'
-};
-const diffLabel = difficulty ? difficulty.charAt(0).toUpperCase() + difficulty.slice(1) : 'Unknown';
-const modeLabel = quizMode === 'full' ? 'Full Test' : 'Quick Test';
-document.getElementById('lb-title').textContent =
-`${quizLabels[quizType]} - ${diffLabel} ${modeLabel}`;
+  const quizLabels = {
+    whos: "Who's That Pokémon?",
+    identify: 'Identify the Pokémon',
+    evo: 'Spot the Evolution'
+  };
 
-showScreen('leaderboard-screen');
-fetchLeaderboard();
+  const diffLabel = difficulty ? difficulty.charAt(0).toUpperCase() + difficulty.slice(1) : 'Unknown';
+  const modeLabel = quizMode === 'full' ? 'Full Test' : 'Quick Test';
+
+  const titleEl = document.getElementById('lb-title');
+  if (titleEl) {
+    titleEl.textContent = `${quizLabels[quizType]} - ${diffLabel} ${modeLabel}`;
+  }
+
+  showScreen('leaderboard-screen');
+  fetchLeaderboard();
 }
 
 function closeLeaderboard() {
   playClick();
-  if (_lbMsgTimer) { clearInterval(_lbMsgTimer); _lbMsgTimer = null; }
+  if (_lbMsgTimer) {
+    clearInterval(_lbMsgTimer);
+    _lbMsgTimer = null;
+  }
   showScreen('result-screen');
 }
 

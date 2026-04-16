@@ -1,45 +1,58 @@
-html {
-  scrollbar-gutter: stable; /* reserves scrollbar space always — viewport never shrinks */
-}
-
-
 @font-face {
   font-family: 'PokemonSolid';
   src: url('../fonts/Pokemon Solid.ttf') format('truetype');
-  font-weight: normal; font-style: normal;
+  font-weight: normal;
+  font-style: normal;
 }
+
 @font-face {
   font-family: 'PressStart2P';
   src: url('../fonts/PressStart2P-Regular.ttf') format('truetype');
-  font-weight: normal; font-style: normal;
+  font-weight: normal;
+  font-style: normal;
 }
+
 @font-face {
   font-family: 'Flexo';
   src: url('../fonts/flexo-medium.ttf') format('truetype');
-  font-weight: normal; font-style: normal;
+  font-weight: normal;
+  font-style: normal;
 }
+
 @font-face {
   font-family: 'Roboto';
   src: url('../fonts/Roboto-Regular.ttf') format('truetype');
-  font-weight: normal; font-style: normal;
+  font-weight: normal;
+  font-style: normal;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  scrollbar-gutter: stable;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background: #FFCB05;
-  font-family: Flexo, sans-serif;
+  font-family: 'Flexo', sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: stretch;       /* ← CHANGED: no longer depends on viewport width */
-  justify-content: flex-start;/* ← CHANGED: card starts from top, no overflow clipping */
+  align-items: stretch;
+  justify-content: flex-start;
   padding: 16px;
   overflow-x: hidden;
   touch-action: manipulation;
   padding-top: max(16px, env(safe-area-inset-top));
 }
 
-small { font-family: 'Flexo', sans-serif; }
+small {
+  font-family: 'Flexo', sans-serif;
+}
 
 .card {
   background: #fff;
@@ -50,10 +63,10 @@ small { font-family: 'Flexo', sans-serif; }
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
   text-align: center;
   overflow: visible;
-  margin-left: auto;          /* ← ADD: centers using its own margins */
-  margin-right: auto;         /* ← ADD: not affected by scrollbar width changes */
-  margin-top: auto;           /* ← ADD: vertically centers on short-content screens */
-  margin-bottom: auto;        /* ← ADD */
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 /* ── LANDING ── */
