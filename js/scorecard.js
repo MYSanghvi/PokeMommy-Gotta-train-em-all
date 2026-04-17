@@ -43,17 +43,18 @@ function _absUrl(rel) {
 /* Load a fresh Image — always creates a new Image() to avoid stale DOM references */
 function _load(src, cb) {
   var img = new Image();
-  /* crossOrigin anonymous prevents canvas taint on same-origin GitHub Pages */
-  img.crossOrigin = 'anonymous';
+  /* Use CORS only for http(s); file:// local runs reject crossOrigin requests. */
+  var absSrc = _absUrl(src);
+  if (/^https?:/i.test(absSrc)) img.crossOrigin = 'anonymous';
   img.onload  = function () { cb(img); };
   img.onerror = function () {
     /* Retry once without crossOrigin (some servers reject the preflight) */
     var retry = new Image();
     retry.onload  = function () { cb(retry); };
     retry.onerror = function () { cb(null); };
-    retry.src = _absUrl(src);
+    retry.src = absSrc;
   };
-  img.src = _absUrl(src);
+  img.src = absSrc;
 }
 
 /* ── Value formatters ── */
@@ -404,7 +405,13 @@ window.shareScoreCard = function (data) {
     var cv      = _buildCard(data, imgs.logo, imgs.boy, imgs.girl);
     var safeUrl;
     try  { safeUrl = cv.toDataURL('image/png'); }
-    catch(e) { safeUrl = _buildCard(data, null, null, null).toDataURL('image/png'); }
+    catch(e) {
+      if (location.protocol === 'file:' && typeof showToast === 'function') {
+        showToast('Local file mode blocks exporting embedded images. Run the site through a local web server to include the logo and avatar.');
+      }
+      console.warn('Score card export fell back to a text-only image:', e);
+      safeUrl = _buildCard(data, null, null, null).toDataURL('image/png');
+    }
     _showModal(cv, safeUrl, shareText);
   }
 
