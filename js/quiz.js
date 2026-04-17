@@ -119,6 +119,8 @@ let _settingsSnapshot = null;
 let _learnRequestToken = 0;
 let _hintRequestToken = 0;
 let _quizRunToken = 0;
+const preloadedImageUrls = new Set();
+const imagePreloadPromises = new Map();
 
 function fetchWithTimeout(url, options = {}, timeoutMs = API_TIMEOUT_MS) {
   const controller = new AbortController();
@@ -179,6 +181,37 @@ function buildLocalEvolutionChain(pokemonId) {
     parentMap,
     childrenMap
   };
+}
+
+function preloadImageUrl(url) {
+  if (!url) return Promise.resolve(null);
+  if (preloadedImageUrls.has(url)) return Promise.resolve(url);
+  if (imagePreloadPromises.has(url)) return imagePreloadPromises.get(url);
+
+  const promise = new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      preloadedImageUrls.add(url);
+      resolve(url);
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  }).finally(() => {
+    imagePreloadPromises.delete(url);
+  });
+
+  imagePreloadPromises.set(url, promise);
+  return promise;
+}
+
+async function preloadSpriteAsset(name, id) {
+  const primaryUrl = gifUrl(name);
+  const fallback = fallbackUrl(id);
+  const loadedPrimary = await preloadImageUrl(primaryUrl);
+  if (loadedPrimary) return loadedPrimary;
+
+  await preloadImageUrl(fallback);
+  return fallback;
 }
 
 
@@ -2285,9 +2318,16 @@ async function startGame() {
     document.getElementById("identify-section").style.display = quizType === "identify" ? "block" : "none";
     document.getElementById("evo-section").style.display = quizType === "evo" ? "block" : "none";
 
+    const initialPreloadCount = quizMode === "full" ? Math.min(24, questions.length) : questions.length;
+    await preloadQuestionImages(0, initialPreloadCount);
+
     showScreen("game-screen");
     startTimer();
     await renderQuestion();
+
+    if (initialPreloadCount < questions.length) {
+      void preloadQuestionImages(initialPreloadCount, questions.length - initialPreloadCount);
+    }
   } catch (err) {
     console.error("startGame failed:", err);
     clearAutoNext();
@@ -2309,14 +2349,18 @@ async function preloadQuestionImages(startIdx, count) {
 		if (quizType === 'evo') {
 			if (!q.evoQ) q.evoQ = await buildEvoQuestion(q.correct);
 			if (!q.evoQ.options) q.evoQ.options = buildEvoOptions(q.evoQ);
+			const evoTasks = [preloadSpriteAsset(q.evoQ.subject.name, q.evoQ.subject.id)];
 			q.evoQ.options.filter(o => !o.isNone).forEach(o => {
-				new Image().src = gifUrl(o.name);
+				evoTasks.push(preloadSpriteAsset(o.name, o.id));
 			});
+			await Promise.all(evoTasks);
 		} else {
 			if (!q.options) q.options = await buildOptions(q.correct);
+			const optionTasks = [preloadSpriteAsset(q.correct.name, q.correct.id)];
 			q.options.forEach(o => {
-				new Image().src = gifUrl(o.name);
+				optionTasks.push(preloadSpriteAsset(o.name, o.id));
 			});
+			await Promise.all(optionTasks);
 		}
 	}
 }
@@ -2324,7 +2368,7 @@ async function preloadQuestionImages(startIdx, count) {
 async function renderQuestion() {
 	duckBgm();
 	clearAutoNext();
-	preloadQuestionImages(currentQ + 1, 5);
+	void preloadQuestionImages(currentQ + 1, quizMode === 'full' ? 12 : questions.length);
 	const q = questions[currentQ];
 	hintsRevealed = 0;
 	currentPokemonData = null;
