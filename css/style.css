@@ -777,6 +777,17 @@ body:has(#result-screen[style*="block"]) {
   }
 }
 
+@media (hover: none) {
+  .footer-dedication-badge:hover {
+    box-shadow: 3px 3px 0 #111;
+    transform: none;
+  }
+
+  .footer-dedication-badge:hover .footer-dedication-ball {
+    transform: none;
+  }
+}
+
 .screen { animation: fadeIn .35s ease; }
 @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
