@@ -1616,7 +1616,7 @@ window.addEventListener('load', () => {
 function checkNightMode() {
   if (document.body.classList.contains('night-mode')) return;
   const h = new Date().getHours();
-  if (h >= 11 || h < 4) {
+  if (h >= 23 || h < 4) {
 	// ── Block all interaction for the entire night-mode sequence ──
     const nightBlocker = document.createElement('div');
     nightBlocker.id = 'night-mode-blocker';
