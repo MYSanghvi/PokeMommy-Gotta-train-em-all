@@ -2276,40 +2276,10 @@ async function loadPokemonList() {
 }
 
 async function getEvolutionChain(pokemonId) {
-  if (!allPokemon.length) allPokemon = buildLocalPokemonList(); // ensure list is ready
-  try {
-    const specRes = await fetchWithTimeout(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`);
-		if (!specRes.ok) throw new Error(`Species API error: ${specRes.status}`);
-		const specData = await specRes.json();
-
-		const chainRes = await fetchWithTimeout(specData.evolution_chain.url);
-		if (!chainRes.ok) throw new Error(`Chain API error: ${chainRes.status}`);
-		const chainData = await chainRes.json();
-		const list = [];
-		const parentMap = {},
-			childrenMap = {};
-
-		function walk(node, parent) {
-			const p = allPokemon.find(x => x.name === node.species.name);
-			if (!p) return;
-			list.push(p);
-			parentMap[p.name] = parent || null;
-			childrenMap[p.name] = [];
-			if (parent) childrenMap[parent.name].push(p);
-			node.evolves_to.forEach(c => walk(c, p));
-		}
-
-		walk(chainData.chain, null);
-		return {
-			allMembers: list,
-			parentMap,
-			childrenMap
-		};
-	} catch (e) {
-		console.warn('getEvolutionChain failed, using local fallback:', e);
-		return buildLocalEvolutionChain(pokemonId);
-	}
+    if (!allPokemon.length) allPokemon = buildLocalPokemonList();
+    return buildLocalEvolutionChain(pokemonId); 
 }
+
 async function getGen1EvoSiblings(pokemonId) {
 	try {
 		const {
