@@ -3300,77 +3300,109 @@ function shareScore() {
 }
 
 
-function renderWrongAnswerReview() {
-  const section = document.getElementById('review-section');
-  section.innerHTML = '';
-  if (wrongAnswers.length === 0) {
-    section.style.display = 'none';
-    return;
-  }
-  section.style.display = 'block';
-  const title = document.createElement('div');
-  title.className = 'review-title';
-  title.textContent = `Review Mistakes (${wrongAnswers.length})`;
-  section.appendChild(title);
-
-  wrongAnswers.forEach(w => {
-    const card = document.createElement('div');
-    card.className = 'review-card';
-
-    // Sprite
-    const imgWrap = document.createElement('div');
-    imgWrap.className = 'review-img-wrap';
-    const img = document.createElement('img');
-    img.className = 'review-sprite';
-    if (w.quizType === 'evo') {
-      // show subject for evo questions
-      img.src = gifUrl(w.subjectName);
-      img.onerror = () => { img.onerror = null; img.src = fallbackUrl(w.subjectId); };
-    } else if (w.correctId) {
-      img.src = gifUrl(w.correctName);
-      img.onerror = () => { img.onerror = null; img.src = fallbackUrl(w.correctId); };
-    }
-    imgWrap.appendChild(img);
-
-    // Text block
-    const info = document.createElement('div');
-    info.className = 'review-info';
-
-    if (w.quizType === 'evo') {
-      const q = document.createElement('div');
-      q.className = 'review-question';
-      q.textContent = `${displayName(w.subjectName)} ${w.direction === 'next' ? '→ evolves into?' : '← evolved from?'}`;
-      const correct = document.createElement('div');
-      correct.className = 'review-correct';
-      correct.innerHTML = `✅ ${w.correctName === '(no evolution)' ? (w.direction === 'next' ? 'Does not evolve' : 'No pre-evolution') : displayName(w.correctName)}`;
-      const wrong = document.createElement('div');
-      wrong.className = 'review-wrong';
-      wrong.innerHTML = `❌ You chose: ${w.chosenName === '(none)' ? (w.direction === 'next' ? 'Does not evolve' : 'No pre-evolution') : displayName(w.chosenName)}`;
-      info.appendChild(q);
-      info.appendChild(correct);
-      info.appendChild(wrong);
+// ── REVIEW SCREEN ──────────────────────────────────────────────
+function showReviewScreen(show) {
+    playClick();
+    if (show) {
+        renderReviewScreen();
+        showScreen('review-screen');
     } else {
-      const q = document.createElement('div');
-      q.className = 'review-question';
-      q.textContent = w.quizType === 'identify'
-        ? `Which image is ${displayName(w.correctName)}?`
-        : `Who's that Pokémon?`;
-      const correct = document.createElement('div');
-      correct.className = 'review-correct';
-      correct.innerHTML = `✅ ${displayName(w.correctName)}`;
-      const wrong = document.createElement('div');
-      wrong.className = 'review-wrong';
-      wrong.innerHTML = w.chosenName ? `❌ You chose: ${displayName(w.chosenName)}` : `❌ Incorrect`;
-      info.appendChild(q);
-      info.appendChild(correct);
-      info.appendChild(wrong);
+        showScreen('result-screen');
     }
-
-    card.appendChild(imgWrap);
-    card.appendChild(info);
-    section.appendChild(card);
-  });
 }
+
+function renderReviewScreen() {
+    const list = byId('review-list');
+    const headerTitle = byId('review-header-title');
+    const headerSub = byId('review-header-sub');
+    if (!list) return;
+
+    headerTitle.textContent = `Answer Review (${answeredCount} questions)`;
+    headerSub.textContent = `✅ ${correctCount} correct  ·  ❌ ${wrongAnswers.length} wrong`;
+    list.innerHTML = '';
+
+    // Build a lookup of wrong answers by their unique key
+    const wrongMap = {};
+    wrongAnswers.forEach(w => {
+        const key = w.quizType === 'evo' ? `evo-${w.subjectId}` : `${w.quizType}-${w.correctId}`;
+        wrongMap[key] = w;
+    });
+
+    questions.slice(0, answeredCount).forEach((q, idx) => {
+        const qCorrectId = q.correct.id;
+        const qCorrectName = q.correct.name;
+        const evoQ = q.evoQ;
+        let wrong = null;
+
+        if (quizType === 'evo' && evoQ) {
+            wrong = wrongMap[`evo-${evoQ.subject.id}`];
+        } else {
+            wrong = wrongMap[`${quizType}-${qCorrectId}`];
+        }
+        const isWrong = !!wrong;
+
+        const card = document.createElement('div');
+        card.className = isWrong ? 'review-card review-card--wrong' : 'review-card review-card--correct';
+
+        // Number badge
+        const num = document.createElement('div');
+        num.style.cssText = `min-width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.12);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:Flexo,sans-serif;`;
+        num.textContent = idx + 1;
+
+        // Sprite
+        const img = document.createElement('img');
+        img.style.cssText = `width:44px;height:44px;object-fit:contain;flex-shrink:0;image-rendering:pixelated;`;
+        const spriteName = (quizType === 'evo' && evoQ) ? evoQ.subject.name : qCorrectName;
+        const spriteId   = (quizType === 'evo' && evoQ) ? evoQ.subject.id  : qCorrectId;
+        img.src = gifUrl(spriteName);
+        img.onerror = () => { img.onerror = null; img.src = fallbackUrl(spriteId); };
+
+        // Info block
+        const info = document.createElement('div');
+        info.style.cssText = `flex:1;min-width:0;font-family:Flexo,sans-serif;`;
+
+        if (quizType === 'evo' && evoQ) {
+    const direction = evoQ.direction === 'next' ? 'evolves into?' : 'evolved from?';
+    const correctLabel = evoQ.answerIsNone
+        ? (evoQ.direction === 'next' ? 'Does not evolve' : 'No pre-evolution')
+        : displayName(evoQ.answer?.name);
+    info.innerHTML = `
+        <div style="font-size:11px;margin-bottom:3px;" class="review-question">${capitalize(spriteName)} ${direction}</div>
+        <div class="review-correct">✓ ${correctLabel}</div>
+        ${isWrong ? `<div class="review-wrong" style="margin-top:2px;">✗ You chose: ${wrong.chosenName === 'none' ? (evoQ.direction === 'next' ? 'Does not evolve' : 'No pre-evolution') : displayName(wrong.chosenName)}</div>` : ''}`;
+} else if (isWrong) {
+    const qLabel = quizType === 'identify' ? `Which image is ${displayName(wrong.correctName)}?` : "Who's that Pokémon?";
+    info.innerHTML = `
+        <div style="font-size:11px;margin-bottom:3px;" class="review-question">${qLabel}</div>
+        <div class="review-correct">✓ ${displayName(wrong.correctName)}</div>
+        <div class="review-wrong" style="margin-top:2px;">✗ You chose: ${wrong.chosenName ? displayName(wrong.chosenName) : 'Incorrect'}</div>`;
+} else {
+    const qLabel = quizType === 'identify' ? `Which image is ${displayName(qCorrectName)}?` : quizType === 'evo' ? 'Evolution question' : "Who's that Pokémon?";
+    info.innerHTML = `
+        <div style="font-size:11px;margin-bottom:3px;" class="review-question">${qLabel}</div>
+        <div class="review-correct">✓ ${displayName(qCorrectName)}</div>`;
+}
+
+        // Result icon
+        const icon = document.createElement('div');
+        icon.style.cssText = `font-size:18px;flex-shrink:0;`;
+        icon.textContent = isWrong ? '❌' : '✅';
+
+        card.append(num, img, info, icon);
+        list.appendChild(card);
+    });
+}
+
+function renderWrongAnswerReview() {
+    // Hide the old inline review section (kept for DOM compatibility)
+    const section = byId('review-section');
+    if (section) section.style.display = 'none';
+    // Show the Review button if there are answers
+    const btn = byId('review-answers-btn');
+    if (btn) btn.style.display = answeredCount > 0 ? 'block' : 'none';
+}
+
+
 
 
 // ── Utility ───────────────────────────────────────────────────────
@@ -3486,10 +3518,8 @@ scoreSubmitted = false;
 }
 
 function showScreen(id) {
-	['landing-screen', 'welcome-screen', 'game-screen', 'result-screen', 'leaderboard-screen', 'learn-browse-screen', 'learn-detail-screen']
-	.forEach(s => {
-		document.getElementById(s).style.display = s === id ? 'block' : 'none';
-	});
+    ['landing-screen','welcome-screen','game-screen','result-screen','leaderboard-screen','learn-browse-screen','learn-detail-screen','review-screen']
+    .forEach(s => document.getElementById(s).style.display = s === id ? 'block' : 'none');
 }
 
 function capitalize(str) {
